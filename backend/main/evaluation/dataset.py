@@ -171,7 +171,7 @@ def add_items(langfuse: Langfuse, dataset_name: str):
 
 def main():
     """Main function to create the evaluation dataset."""
-    DATASET_NAME = "product_manual"
+    DATASET_NAME = "medlearn"
 
     langfuse = get_langfuse_client()
     create_dataset(langfuse, DATASET_NAME)

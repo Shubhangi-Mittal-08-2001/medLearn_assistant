@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 # Load env vars
 load_dotenv()
 
-DATASET_NAME = "product_manual"
+DATASET_NAME = "medlearn"
 
 
 async def evaluate_faithfulness_score(
