@@ -41,3 +41,4 @@ evaluation_report.txt
 # OS
 .DS_Store
 Thumbs.db
+backend/.env
