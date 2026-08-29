@@ -43,3 +43,4 @@ evaluation_report.txt
 Thumbs.db
 *.backend/.env
 backend/.env
+*.env
