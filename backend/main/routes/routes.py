@@ -7,9 +7,9 @@ import os
 import re
 import logging
 import tempfile
-from typing import List
+
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
-from pydantic import BaseModel, Field, field_validator
+
 from llama_index.core import SimpleDirectoryReader
 from main.service.rag_service import get_query_engine, add_documents_to_index
 from main.evaluation.dataset import get_langfuse_client
@@ -27,6 +27,8 @@ from main.handoff.handoff_service import (
 import secrets
 import datetime
 
+from main.schema.models import QueryRequest,QueryResponse,UploadResponse
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -36,40 +38,6 @@ MAX_QUERY_LENGTH = 2000
 MIN_SIMILARITY_TOP_K = 1
 MAX_SIMILARITY_TOP_K = 20
 ALLOWED_EXTENSIONS = {'.txt', '.pdf', '.md'}
-
-
-class QueryRequest(BaseModel):
-    """Request model for query endpoint."""
-    question: str = Field(..., min_length=1, max_length=MAX_QUERY_LENGTH)
-    user_email: str = Field(..., min_length=3, max_length=320, description="User email for human handoff follow-up")
-    
-    @field_validator('question')
-    @classmethod
-    def validate_question(cls, v):
-        """Validate and sanitize question input."""
-        if not v or not v.strip():
-            raise ValueError("Question cannot be empty")
-        return v.strip()
-
-    @field_validator("user_email")
-    @classmethod
-    def validate_user_email(cls, v: str):
-        v = (v or "").strip()
-        if "@" not in v or v.startswith("@") or v.endswith("@"):
-            raise ValueError("Invalid user_email")
-        return v
-
-
-class QueryResponse(BaseModel):
-    """Response model for query endpoint."""
-    answer: str
-    source_nodes: List[dict] = []
-
-
-class UploadResponse(BaseModel):
-    """Response model for upload endpoint."""
-    message: str
-    documents_indexed: int
 
 
 @router.get("/health")
@@ -374,7 +342,7 @@ async def query_rag(request: QueryRequest, background_tasks: BackgroundTasks):
 async def root():
     """Root endpoint with API information."""
     return {
-        "message": "Sprint 9 Practice RAG API",
+        "message": "MedLearn AI Assistant",
         "version": "1.0.0",
         "endpoints": {
             "POST /upload": "Upload documents for indexing",
