@@ -7,11 +7,12 @@ import os
 import re
 import logging
 import tempfile
+from dotenv import load_dotenv
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
 
-from llama_index.core import SimpleDirectoryReader
 from main.service.rag_service import get_query_engine, add_documents_to_index
+from main.service.document_processor import DocumentProcessor
 from main.evaluation.dataset import get_langfuse_client
 from main.evaluation.dataset_evaluation import (
     evaluate_faithfulness_score,
@@ -31,13 +32,33 @@ from main.schema.models import QueryRequest,QueryResponse,UploadResponse
 
 logger = logging.getLogger(__name__)
 
+# Load environment variables
+load_dotenv()
+
 router = APIRouter()
 
-MAX_FILE_SIZE = 10 * 1024 * 1024
+# Configuration from environment
+MAX_FILE_SIZE_KB = int(os.getenv('MAX_UPLOAD_SIZE_KB', '200'))  # 200 KB default
+MAX_FILE_SIZE = MAX_FILE_SIZE_KB * 1024
+ALLOWED_EXTENSIONS = set(os.getenv('ALLOWED_FILE_TYPES', '.pdf,.docx,.doc,.txt,.xlsx').split(','))
+
+# Images folder should be in backend directory (one level up from main/)
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+IMAGES_FOLDER = os.path.join(BACKEND_DIR, os.getenv('IMAGES_FOLDER', 'stored_images'))
+
 MAX_QUERY_LENGTH = 2000
 MIN_SIMILARITY_TOP_K = 1
 MAX_SIMILARITY_TOP_K = 20
-ALLOWED_EXTENSIONS = {'.txt', '.pdf', '.md'}
+
+# Agent service will be set by app.py
+_agent_service = None
+
+
+def set_agent_service(agent_service):
+    """Set the agent service instance for use in routes."""
+    global _agent_service
+    _agent_service = agent_service
+    logger.info("Agent service initialized in routes")
 
 
 @router.get("/health")
@@ -73,14 +94,24 @@ def sanitize_filename(filename: str) -> str:
 @router.post("/upload", response_model=UploadResponse)
 async def upload_document(file: UploadFile = File(...)):
     """
-    Upload a document file for indexing.
+    Upload a medical document for indexing with multimodal content extraction.
     
-    Accepts: .txt, .pdf, .md files (max 10MB)
+    Accepts: .pdf, .docx, .doc, .txt, .xlsx (configurable in .env)
+    Max size: 200 KB (configurable in .env as MAX_UPLOAD_SIZE_KB)
+    
+    Extracts and processes:
+    - Text content
+    - Images (saved to backend/stored_images folder)
+    - Tables
+    
+    All extracted content is indexed in pgvector with metadata.
     
     Returns:
         UploadResponse with message and number of documents indexed
     """
     file_path = None
+    processor = None
+    
     try:
         if not file.filename:
             raise HTTPException(
@@ -91,20 +122,26 @@ async def upload_document(file: UploadFile = File(...)):
         safe_filename = sanitize_filename(file.filename)
         file_ext = os.path.splitext(safe_filename)[1].lower()
         
+        # Validate file extension
         if file_ext not in ALLOWED_EXTENSIONS:
+            allowed = ', '.join(sorted(ALLOWED_EXTENSIONS))
             raise HTTPException(
                 status_code=400,
-                detail=f"File type not supported. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
+                detail=f"File type '{file_ext}' not supported. Allowed types: {allowed}"
             )
         
+        # Read file content
         content = await file.read()
         
+        # Validate file size
+        file_size_kb = len(content) / 1024
         if len(content) > MAX_FILE_SIZE:
             raise HTTPException(
                 status_code=400,
-                detail=f"File size exceeds maximum allowed size of {MAX_FILE_SIZE / (1024*1024):.1f}MB"
+                detail=f"File size ({file_size_kb:.1f}KB) exceeds maximum allowed size of {MAX_FILE_SIZE_KB}KB"
             )
         
+        # Write to temporary file
         with tempfile.NamedTemporaryFile(
             mode='wb',
             suffix=file_ext,
@@ -113,18 +150,28 @@ async def upload_document(file: UploadFile = File(...)):
             tmp_file.write(content)
             file_path = tmp_file.name
         
-        logger.info(f"File uploaded: {safe_filename} ({len(content)} bytes)")
+        logger.info(f"File uploaded: {safe_filename} ({file_size_kb:.1f}KB)")
         
-        reader = SimpleDirectoryReader(input_files=[file_path])
-        documents = reader.load_data()
+        # Process document with multimodal extraction
+        processor = DocumentProcessor(images_folder=IMAGES_FOLDER)
+        text_nodes, metadata = processor.process_document(file_path, safe_filename)
         
-        logger.info(f"Loaded {len(documents)} document(s) from {safe_filename}")
+        if not text_nodes:
+            raise HTTPException(
+                status_code=400,
+                detail="Could not extract content from document"
+            )
         
-        result = add_documents_to_index(documents)
+        logger.info(f"Extracted {len(text_nodes)} text node(s), "
+                   f"{metadata.get('extracted_images', 0)} image(s), "
+                   f"{metadata.get('total_tables', 0)} table(s) from {safe_filename}")
+        
+        # Add documents to index
+        result = add_documents_to_index(text_nodes)
         
         return UploadResponse(
             message=result["message"],
-            documents_indexed=len(documents)
+            documents_indexed=len(text_nodes)
         )
         
     except HTTPException:
@@ -133,13 +180,19 @@ async def upload_document(file: UploadFile = File(...)):
         logger.error(f"Validation error: {e}", exc_info=True)
         raise HTTPException(
             status_code=400,
-            detail="Invalid file or request"
+            detail=f"Invalid file or request: {str(e)}"
+        )
+    except ImportError as e:
+        logger.error(f"Missing dependency: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Document processing not fully configured: {str(e)}"
         )
     except Exception as e:
         logger.error(f"Error uploading document: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail="Failed to process document"
+            detail=f"Failed to process document: {str(e)}"
         )
     finally:
         if file_path and os.path.exists(file_path):

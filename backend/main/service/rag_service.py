@@ -70,6 +70,9 @@ def load_or_create_index(embed_model) -> VectorStoreIndex:
     """Load existing index from PostgreSQL or create a new one."""
     logger.info("Loading or creating vector index...")
     
+    # Get table name from environment or use default
+    table_name = os.getenv('DB_TABLE_NAME', 'medical_documents_embeddings')
+    
     # Initialize PGVector store
     vector_store = PGVectorStore.from_params(
         database=os.getenv('DB_NAME'),
@@ -77,7 +80,7 @@ def load_or_create_index(embed_model) -> VectorStoreIndex:
         password=os.getenv('DB_PASSWORD'),
         port=os.getenv('DB_PORT'),
         user=os.getenv('DB_USER'),
-        table_name=os.getenv('DB_TABLE_NAME', 'vector_store'),
+        table_name=table_name,
         embed_dim=1536
     )
     
@@ -89,17 +92,17 @@ def load_or_create_index(embed_model) -> VectorStoreIndex:
             vector_store=vector_store,
             embed_model=embed_model
         )
-        logger.info("✓ Loaded existing index from PostgreSQL")
+        logger.info(f"✓ Loaded existing index from PostgreSQL (table: {table_name})")
         return index
     except Exception as e:
         logger.info(f"Could not load existing index: {e}")
-        logger.info("Creating new empty index...")
+        logger.info(f"Creating new empty index in table: {table_name}...")
         index = VectorStoreIndex(
             nodes=[],
             storage_context=storage_context,
             embed_model=embed_model
         )
-        logger.info("✓ Created new empty index")
+        logger.info(f"✓ Created new empty index in table: {table_name}")
         return index
 
 
