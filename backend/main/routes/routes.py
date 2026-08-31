@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
 
 from main.service.rag_service import get_query_engine, add_documents_to_index
-from main.service.document_processor import DocumentProcessor
+from backend.main.service.chunking_service import DocumentProcessor
 from main.evaluation.dataset import get_langfuse_client
 from main.evaluation.dataset_evaluation import (
     evaluate_faithfulness_score,

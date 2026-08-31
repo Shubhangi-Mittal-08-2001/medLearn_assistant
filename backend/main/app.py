@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from main.routes.routes import router, set_agent_service
-from main.services.agent_service import AgentService
+from main.service.agent_service import AgentService
 
 # Load environment variables from .env file
 load_dotenv()

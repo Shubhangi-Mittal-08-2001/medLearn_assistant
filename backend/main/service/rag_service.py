@@ -9,7 +9,7 @@ from typing import Optional, Dict
 from dotenv import load_dotenv
 from llama_index.core import Settings, VectorStoreIndex, StorageContext
 from llama_index.llms.azure_openai import AzureOpenAI
-from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
+from agent_factory import create_embel_model, create_llm
 from llama_index.vector_stores.postgres import PGVectorStore
 from main.service.query_engine import create_query_engine
 
@@ -36,26 +36,9 @@ def initialize_services():
     load_dotenv()
     
     # Configure Azure OpenAI
-    logger.info("Initializing Azure OpenAI services...")
-    _llm = AzureOpenAI(
-        model=os.getenv('AZURE_OPENAI_LLM_MODEL', 'gpt-4o-mini'),
-        deployment_name=os.getenv('AZURE_OPENAI_LLM_DEPLOYMENT'),
-        api_key=os.getenv('AZURE_OPENAI_API_KEY'),
-        azure_endpoint=os.getenv('AZURE_OPENAI_ENDPOINT'),
-        api_version=os.getenv('AZURE_OPENAI_API_VERSION', '2024-02-15-preview'),
-        temperature = 1.0
-    )
     
-    _embed_model = AzureOpenAIEmbedding(
-        model=os.getenv('AZURE_OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small'),
-        deployment_name=os.getenv('AZURE_OPENAI_EMBEDDING_DEPLOYMENT'),
-        api_key=os.getenv('AZURE_OPENAI_API_KEY'),
-        azure_endpoint=os.getenv('AZURE_OPENAI_ENDPOINT'),
-        api_version=os.getenv('AZURE_OPENAI_API_VERSION', '2024-02-15-preview')
-    )
-    
-    Settings.llm = _llm
-    Settings.embed_model = _embed_model
+    Settings.llm = create_llm()
+    Settings.embed_model = create_embel_model()
     
     # Load or create index
     _index = load_or_create_index(_embed_model)
