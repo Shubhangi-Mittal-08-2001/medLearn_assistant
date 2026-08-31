@@ -310,7 +310,11 @@ async def run_dataset_evaluation():
         logger.info(f"\nCheck detailed traces & scores in Langfuse Dashboard (Traces + Scores).")
         logger.info("=" * 60)
         
-        return results
+        try:
+            langfuse.flush()
+            logger.info("All traces and scores were flushed to Langfuse.")
+        except Exception:
+            logger.warning("Langfuse flush failed after dataset evaluation", exc_info=True)
 
 
 if __name__ == "__main__":

@@ -163,3 +163,449 @@ TypeError: object of type 'TextNode' has no len()
 2026-08-31 18:31:10 - INFO - main.app - lifespan:35 - ============================================================
 2026-08-31 18:31:10 - INFO - main.app - lifespan:36 - Shutting down MedLearn AI Assistant...
 2026-08-31 18:31:10 - INFO - main.app - lifespan:37 - ============================================================
+2026-08-31 22:25:33 - INFO - main.app - <module>:48 - FastAPI app initialized with version 1.0.0
+2026-08-31 22:25:33 - INFO - main.app - lifespan:23 - ============================================================
+2026-08-31 22:25:33 - INFO - main.app - lifespan:24 - Initializing MedLearn AI Assistant Agent...
+2026-08-31 22:25:33 - INFO - main.app - lifespan:25 - ============================================================
+2026-08-31 22:25:33 - INFO - main.service.agent_service - initialize:30 - Initializing Agent Service...
+2026-08-31 22:25:33 - INFO - main.service.mcp_client - load_tools:48 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-08-31 22:25:33 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 22:25:33 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:146 - Received session ID: 414b71c3-57a0-4a39-b962-21a7f7fe7d15
+2026-08-31 22:25:34 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 202 Accepted"
+2026-08-31 22:25:34 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: GET https://huggingface.co/mcp "HTTP/1.1 405 Method Not Allowed"
+2026-08-31 22:25:34 - INFO - mcp.client.streamable_http - handle_get_stream:240 - GET stream disconnected, reconnecting in 1000ms...
+2026-08-31 22:25:34 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 22:25:34 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: DELETE https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 22:25:34 - INFO - main.service.mcp_client - load_tools:81 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-08-31 22:25:34 - INFO - main.service.agent_service - initialize:38 - Loaded 4 MCP tools
+2026-08-31 22:25:34 - INFO - main.service.agent_service - initialize:42 - Added hf_inference tool
+2026-08-31 22:25:34 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-08-31 22:25:34 - INFO - main.service.agent_service - initialize:52 - Agent Service initialized successfully
+2026-08-31 22:25:34 - INFO - main.routes.routes - set_agent_service:61 - Agent service initialized in routes. Service: AgentService
+2026-08-31 22:25:34 - INFO - main.app - lifespan:29 - ✓ Agent ready for medical related analysis and query...
+2026-08-31 22:25:34 - INFO - main.app - lifespan:30 - ============================================================
+2026-08-31 22:26:47 - INFO - main.service.rag_service - get_query_engine:170 - Vector index not yet initialized, initializing services...
+2026-08-31 22:26:47 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-08-31 22:26:47 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-08-31 22:26:47 - INFO - main.service.agent_factory - create_embel_model:39 - Initializing Azure OpenAI Embed Model...
+2026-08-31 22:26:47 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-08-31 22:26:47 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-08-31 22:26:47 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-08-31 22:26:47 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-08-31 22:26:47 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medical_documents_embeddings...
+2026-08-31 22:26:47 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medical_documents_embeddings)
+2026-08-31 22:26:47 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-08-31 22:26:47 - INFO - main.service.rag_service - get_query_engine:178 - Creating new query engine with similarity_top_k=20
+2026-08-31 22:26:47 - INFO - main.service.query_engine - create_query_engine:24 - Creating query engine with similarity_top_k=20...
+2026-08-31 22:26:47 - INFO - main.service.query_engine - create_query_engine:33 - ✓ Query engine created successfully (similarity_top_k=20)
+2026-08-31 22:26:47 - INFO - main.service.rag_service - get_query_engine:182 - ✓ Query engine created and cached for similarity_top_k=20
+2026-08-31 22:27:04 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 3738f46b113155cd4761569fce68b24f: 0.90
+2026-08-31 22:27:08 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 3738f46b113155cd4761569fce68b24f: 0.20
+2026-08-31 22:27:19 - INFO - main.handoff.handoff_service - send_handoff_email:206 - Human handoff email sent successfully.
+2026-08-31 22:32:46 - INFO - main.app - lifespan:35 - ============================================================
+2026-08-31 22:32:46 - INFO - main.app - lifespan:36 - Shutting down MedLearn AI Assistant...
+2026-08-31 22:32:46 - INFO - main.app - lifespan:37 - ============================================================
+2026-08-31 22:33:07 - INFO - main.app - <module>:48 - FastAPI app initialized with version 1.0.0
+2026-08-31 22:33:07 - INFO - main.app - lifespan:23 - ============================================================
+2026-08-31 22:33:07 - INFO - main.app - lifespan:24 - Initializing MedLearn AI Assistant Agent...
+2026-08-31 22:33:07 - INFO - main.app - lifespan:25 - ============================================================
+2026-08-31 22:33:07 - INFO - main.service.agent_service - initialize:30 - Initializing Agent Service...
+2026-08-31 22:33:07 - INFO - main.service.mcp_client - load_tools:48 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-08-31 22:33:08 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 22:33:08 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:146 - Received session ID: d0317b92-b969-419a-bad2-7c1a846a243d
+2026-08-31 22:33:08 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 202 Accepted"
+2026-08-31 22:33:08 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: GET https://huggingface.co/mcp "HTTP/1.1 405 Method Not Allowed"
+2026-08-31 22:33:08 - INFO - mcp.client.streamable_http - handle_get_stream:240 - GET stream disconnected, reconnecting in 1000ms...
+2026-08-31 22:33:08 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 22:33:09 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: DELETE https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 22:33:09 - INFO - main.service.mcp_client - load_tools:81 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-08-31 22:33:09 - INFO - main.service.agent_service - initialize:38 - Loaded 4 MCP tools
+2026-08-31 22:33:09 - INFO - main.service.agent_service - initialize:42 - Added hf_inference tool
+2026-08-31 22:33:09 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-08-31 22:33:09 - INFO - main.service.agent_service - initialize:52 - Agent Service initialized successfully
+2026-08-31 22:33:09 - INFO - main.routes.routes - set_agent_service:61 - Agent service initialized in routes. Service: AgentService
+2026-08-31 22:33:09 - INFO - main.app - lifespan:29 - ✓ Agent ready for medical related analysis and query...
+2026-08-31 22:33:09 - INFO - main.app - lifespan:30 - ============================================================
+2026-08-31 22:33:36 - INFO - main.service.rag_service - get_query_engine:170 - Vector index not yet initialized, initializing services...
+2026-08-31 22:33:36 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-08-31 22:33:36 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-08-31 22:33:36 - INFO - main.service.agent_factory - create_embel_model:39 - Initializing Azure OpenAI Embed Model...
+2026-08-31 22:33:36 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-08-31 22:33:36 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-08-31 22:33:36 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-08-31 22:33:36 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-08-31 22:33:36 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medical_documents_embeddings...
+2026-08-31 22:33:37 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medical_documents_embeddings)
+2026-08-31 22:33:37 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-08-31 22:33:37 - INFO - main.service.rag_service - get_query_engine:178 - Creating new query engine with similarity_top_k=20
+2026-08-31 22:33:37 - INFO - main.service.query_engine - create_query_engine:24 - Creating query engine with similarity_top_k=20...
+2026-08-31 22:33:37 - INFO - main.service.query_engine - create_query_engine:33 - ✓ Query engine created successfully (similarity_top_k=20)
+2026-08-31 22:33:37 - INFO - main.service.rag_service - get_query_engine:182 - ✓ Query engine created and cached for similarity_top_k=20
+2026-08-31 22:33:55 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 6af5d33d1847f1e5446a4da533e06e72: 1.00
+2026-08-31 22:33:59 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 6af5d33d1847f1e5446a4da533e06e72: 0.20
+2026-08-31 22:34:10 - INFO - main.handoff.handoff_service - send_handoff_email:206 - Human handoff email sent successfully.
+2026-08-31 22:39:20 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 2e24448d11e3aaa0171dc6277a4c2781: 0.90
+2026-08-31 22:39:25 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 2e24448d11e3aaa0171dc6277a4c2781: 0.50
+2026-08-31 22:46:28 - INFO - main.app - lifespan:35 - ============================================================
+2026-08-31 22:46:28 - INFO - main.app - lifespan:36 - Shutting down MedLearn AI Assistant...
+2026-08-31 22:46:28 - INFO - main.app - lifespan:37 - ============================================================
+2026-08-31 22:46:49 - INFO - main.app - <module>:48 - FastAPI app initialized with version 1.0.0
+2026-08-31 22:46:49 - INFO - main.app - lifespan:23 - ============================================================
+2026-08-31 22:46:49 - INFO - main.app - lifespan:24 - Initializing MedLearn AI Assistant Agent...
+2026-08-31 22:46:49 - INFO - main.app - lifespan:25 - ============================================================
+2026-08-31 22:46:49 - INFO - main.service.agent_service - initialize:30 - Initializing Agent Service...
+2026-08-31 22:46:49 - INFO - main.service.mcp_client - load_tools:48 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-08-31 22:46:49 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 22:46:49 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:146 - Received session ID: e3a4763d-7838-4b9e-bcf6-57357ff25216
+2026-08-31 22:46:50 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: GET https://huggingface.co/mcp "HTTP/1.1 405 Method Not Allowed"
+2026-08-31 22:46:50 - INFO - mcp.client.streamable_http - handle_get_stream:240 - GET stream disconnected, reconnecting in 1000ms...
+2026-08-31 22:46:50 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 202 Accepted"
+2026-08-31 22:46:50 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 22:46:50 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: DELETE https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 22:46:50 - INFO - main.service.mcp_client - load_tools:81 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-08-31 22:46:50 - INFO - main.service.agent_service - initialize:38 - Loaded 4 MCP tools
+2026-08-31 22:46:50 - INFO - main.service.agent_service - initialize:42 - Added hf_inference tool
+2026-08-31 22:46:50 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-08-31 22:46:50 - INFO - main.service.agent_service - initialize:52 - Agent Service initialized successfully
+2026-08-31 22:46:50 - INFO - main.routes.routes - set_agent_service:61 - Agent service initialized in routes. Service: AgentService
+2026-08-31 22:46:50 - INFO - main.app - lifespan:29 - ✓ Agent ready for medical related analysis and query...
+2026-08-31 22:46:50 - INFO - main.app - lifespan:30 - ============================================================
+2026-08-31 22:48:31 - INFO - main.service.rag_service - get_query_engine:170 - Vector index not yet initialized, initializing services...
+2026-08-31 22:48:31 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-08-31 22:48:31 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-08-31 22:48:31 - INFO - main.service.agent_factory - create_embel_model:39 - Initializing Azure OpenAI Embed Model...
+2026-08-31 22:48:31 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-08-31 22:48:31 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-08-31 22:48:31 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-08-31 22:48:31 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-08-31 22:48:31 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medical_documents_embeddings...
+2026-08-31 22:48:31 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medical_documents_embeddings)
+2026-08-31 22:48:31 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-08-31 22:48:31 - INFO - main.service.rag_service - get_query_engine:178 - Creating new query engine with similarity_top_k=20
+2026-08-31 22:48:31 - INFO - main.service.query_engine - create_query_engine:24 - Creating query engine with similarity_top_k=20...
+2026-08-31 22:48:31 - INFO - main.service.query_engine - create_query_engine:33 - ✓ Query engine created successfully (similarity_top_k=20)
+2026-08-31 22:48:31 - INFO - main.service.rag_service - get_query_engine:182 - ✓ Query engine created and cached for similarity_top_k=20
+2026-08-31 22:48:53 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 8a01e77f8a2e4d2857c93c291a5e1ad7: 1.00
+2026-08-31 22:48:58 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 8a01e77f8a2e4d2857c93c291a5e1ad7: 0.90
+2026-08-31 22:52:38 - INFO - main.app - lifespan:35 - ============================================================
+2026-08-31 22:52:38 - INFO - main.app - lifespan:36 - Shutting down MedLearn AI Assistant...
+2026-08-31 22:52:38 - INFO - main.app - lifespan:37 - ============================================================
+2026-08-31 22:52:59 - INFO - main.app - <module>:48 - FastAPI app initialized with version 1.0.0
+2026-08-31 23:00:32 - INFO - main.app - <module>:48 - FastAPI app initialized with version 1.0.0
+2026-08-31 23:00:32 - INFO - main.app - lifespan:23 - ============================================================
+2026-08-31 23:00:32 - INFO - main.app - lifespan:24 - Initializing MedLearn AI Assistant Agent...
+2026-08-31 23:00:32 - INFO - main.app - lifespan:25 - ============================================================
+2026-08-31 23:00:32 - INFO - main.service.agent_service - initialize:30 - Initializing Agent Service...
+2026-08-31 23:00:32 - INFO - main.service.mcp_client - load_tools:48 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-08-31 23:00:32 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 23:00:32 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:146 - Received session ID: 40e85f1c-1c7e-44a5-be5a-c0d9edd7d8ca
+2026-08-31 23:00:33 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: GET https://huggingface.co/mcp "HTTP/1.1 405 Method Not Allowed"
+2026-08-31 23:00:33 - INFO - mcp.client.streamable_http - handle_get_stream:240 - GET stream disconnected, reconnecting in 1000ms...
+2026-08-31 23:00:33 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 202 Accepted"
+2026-08-31 23:00:33 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 23:00:33 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: DELETE https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 23:00:33 - INFO - main.service.mcp_client - load_tools:81 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-08-31 23:00:33 - INFO - main.service.agent_service - initialize:38 - Loaded 4 MCP tools
+2026-08-31 23:00:33 - INFO - main.service.agent_service - initialize:42 - Added hf_inference tool
+2026-08-31 23:00:33 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-08-31 23:00:33 - INFO - main.service.agent_service - initialize:52 - Agent Service initialized successfully
+2026-08-31 23:00:33 - INFO - main.routes.routes - set_agent_service:61 - Agent service initialized in routes. Service: AgentService
+2026-08-31 23:00:33 - INFO - main.app - lifespan:29 - ✓ Agent ready for medical related analysis and query...
+2026-08-31 23:00:33 - INFO - main.app - lifespan:30 - ============================================================
+2026-08-31 23:07:19 - INFO - main.service.rag_service - get_query_engine:170 - Vector index not yet initialized, initializing services...
+2026-08-31 23:07:19 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-08-31 23:07:19 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-08-31 23:07:19 - INFO - main.service.agent_factory - create_embel_model:39 - Initializing Azure OpenAI Embed Model...
+2026-08-31 23:07:19 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-08-31 23:07:19 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-08-31 23:07:19 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-08-31 23:07:19 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-08-31 23:07:19 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medical_documents_embeddings...
+2026-08-31 23:07:20 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medical_documents_embeddings)
+2026-08-31 23:07:20 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-08-31 23:07:20 - INFO - main.service.rag_service - get_query_engine:178 - Creating new query engine with similarity_top_k=4
+2026-08-31 23:07:20 - INFO - main.service.query_engine - create_query_engine:24 - Creating query engine with similarity_top_k=4...
+2026-08-31 23:07:20 - INFO - main.service.query_engine - create_query_engine:33 - ✓ Query engine created successfully (similarity_top_k=4)
+2026-08-31 23:07:20 - INFO - main.service.rag_service - get_query_engine:182 - ✓ Query engine created and cached for similarity_top_k=4
+2026-08-31 23:07:39 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 1bba0c70082ee5744b192d838631220e: 1.00
+2026-08-31 23:07:44 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 1bba0c70082ee5744b192d838631220e: 0.90
+2026-08-31 23:47:03 - INFO - main.app - lifespan:35 - ============================================================
+2026-08-31 23:47:03 - INFO - main.app - lifespan:36 - Shutting down MedLearn AI Assistant...
+2026-08-31 23:47:03 - INFO - main.app - lifespan:37 - ============================================================
+2026-08-31 23:47:27 - INFO - main.app - <module>:48 - FastAPI app initialized with version 1.0.0
+2026-08-31 23:47:27 - INFO - main.app - lifespan:23 - ============================================================
+2026-08-31 23:47:27 - INFO - main.app - lifespan:24 - Initializing MedLearn AI Assistant Agent...
+2026-08-31 23:47:27 - INFO - main.app - lifespan:25 - ============================================================
+2026-08-31 23:47:27 - INFO - main.service.agent_service - initialize:30 - Initializing Agent Service...
+2026-08-31 23:47:27 - INFO - main.service.mcp_client - load_tools:48 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-08-31 23:47:28 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 23:47:28 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:146 - Received session ID: 432370fd-79d8-4542-9996-401e2baea32f
+2026-08-31 23:47:28 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: GET https://huggingface.co/mcp "HTTP/1.1 405 Method Not Allowed"
+2026-08-31 23:47:28 - INFO - mcp.client.streamable_http - handle_get_stream:240 - GET stream disconnected, reconnecting in 1000ms...
+2026-08-31 23:47:29 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 202 Accepted"
+2026-08-31 23:47:29 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 23:47:29 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: DELETE https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 23:47:29 - INFO - main.service.mcp_client - load_tools:81 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-08-31 23:47:29 - INFO - main.service.agent_service - initialize:38 - Loaded 4 MCP tools
+2026-08-31 23:47:29 - INFO - main.service.agent_service - initialize:42 - Added hf_inference tool
+2026-08-31 23:47:29 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-08-31 23:47:29 - INFO - main.service.agent_service - initialize:52 - Agent Service initialized successfully
+2026-08-31 23:47:29 - INFO - main.routes.routes - set_agent_service:67 - Agent service initialized in routes. Service: AgentService
+2026-08-31 23:47:29 - INFO - main.app - lifespan:29 - ✓ Agent ready for medical related analysis and query...
+2026-08-31 23:47:29 - INFO - main.app - lifespan:30 - ============================================================
+2026-08-31 23:47:48 - INFO - main.service.rag_service - get_index:151 - Vector index not yet initialized, initializing services...
+2026-08-31 23:47:48 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-08-31 23:47:48 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-08-31 23:47:48 - INFO - main.service.agent_factory - create_embel_model:39 - Initializing Azure OpenAI Embed Model...
+2026-08-31 23:47:48 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-08-31 23:47:48 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-08-31 23:47:48 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-08-31 23:47:48 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-08-31 23:47:48 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medical_documents_embeddings...
+2026-08-31 23:47:48 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medical_documents_embeddings)
+2026-08-31 23:47:48 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-08-31 23:47:48 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-08-31 23:47:48 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medical_documents_embeddings top_k=4 configured_retrieval=vector+bm25
+2026-08-31 23:47:48 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medical_documents_embeddings
+2026-08-31 23:47:49 - INFO - main.service.fusion_retrieval - _init_retrievers:92 - fusion.retrievers loaded_bm25_nodes count=9
+2026-08-31 23:47:49 - INFO - main.service.fusion_retrieval - _init_retrievers:109 - fusion.retrievers enabled retrieval_type=hybrid(vector+bm25)
+2026-08-31 23:47:49 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=164.7 table=medical_documents_embeddings top_k=4 mode=reciprocal_rerank retrieval_type=hybrid(vector+bm25)
+2026-08-31 23:47:49 - INFO - main.service.fusion_retrieval - query:138 - fusion.query start retrieval_type=hybrid(vector+bm25) query_chars=25
+2026-08-31 23:48:03 - INFO - main.service.fusion_retrieval - query:151 - fusion.query done retrieval_type=hybrid(vector+bm25) ms=14657.7 answer_chars=1702
+2026-08-31 23:48:03 - INFO - main.service.fusion_retrieval - retrieve:174 - fusion.retrieve start retrieval_type=hybrid(vector+bm25) query_chars=25
+2026-08-31 23:48:04 - INFO - main.service.fusion_retrieval - retrieve:203 - fusion.retrieve done retrieval_type=hybrid(vector+bm25) results=4 ms=1020.5
+2026-08-31 23:48:22 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace ba9f1685c66c63bda8e3847b988fa2bd: 1.00
+2026-08-31 23:48:27 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace ba9f1685c66c63bda8e3847b988fa2bd: 0.90
+2026-08-31 23:49:52 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-08-31 23:49:52 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medical_documents_embeddings top_k=4 configured_retrieval=vector+bm25
+2026-08-31 23:49:52 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medical_documents_embeddings
+2026-08-31 23:49:52 - INFO - main.service.fusion_retrieval - _init_retrievers:92 - fusion.retrievers loaded_bm25_nodes count=9
+2026-08-31 23:49:52 - INFO - main.service.fusion_retrieval - _init_retrievers:109 - fusion.retrievers enabled retrieval_type=hybrid(vector+bm25)
+2026-08-31 23:49:52 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=128.3 table=medical_documents_embeddings top_k=4 mode=reciprocal_rerank retrieval_type=hybrid(vector+bm25)
+2026-08-31 23:49:52 - INFO - main.service.fusion_retrieval - query:138 - fusion.query start retrieval_type=hybrid(vector+bm25) query_chars=28
+2026-08-31 23:50:07 - INFO - main.service.fusion_retrieval - query:151 - fusion.query done retrieval_type=hybrid(vector+bm25) ms=14339.2 answer_chars=2361
+2026-08-31 23:50:07 - INFO - main.service.fusion_retrieval - retrieve:174 - fusion.retrieve start retrieval_type=hybrid(vector+bm25) query_chars=28
+2026-08-31 23:50:08 - INFO - main.service.fusion_retrieval - retrieve:203 - fusion.retrieve done retrieval_type=hybrid(vector+bm25) results=4 ms=1092.2
+2026-08-31 23:50:29 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 4369afc742995f7f34eae1f1858ab75d: 1.00
+2026-08-31 23:50:34 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 4369afc742995f7f34eae1f1858ab75d: 0.90
+2026-09-01 00:02:52 - INFO - main.app - lifespan:35 - ============================================================
+2026-09-01 00:02:52 - INFO - main.app - lifespan:36 - Shutting down MedLearn AI Assistant...
+2026-09-01 00:02:52 - INFO - main.app - lifespan:37 - ============================================================
+2026-09-01 00:03:09 - INFO - main.app - <module>:48 - FastAPI app initialized with version 1.0.0
+2026-09-01 00:03:09 - INFO - main.app - lifespan:23 - ============================================================
+2026-09-01 00:03:09 - INFO - main.app - lifespan:24 - Initializing MedLearn AI Assistant Agent...
+2026-09-01 00:03:09 - INFO - main.app - lifespan:25 - ============================================================
+2026-09-01 00:03:09 - INFO - main.service.agent_service - initialize:30 - Initializing Agent Service...
+2026-09-01 00:03:09 - INFO - main.service.mcp_client - load_tools:48 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-09-01 00:03:10 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-09-01 00:03:10 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:146 - Received session ID: fb3d78d0-9ca8-47a6-b489-64f5b6af73ff
+2026-09-01 00:03:10 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 202 Accepted"
+2026-09-01 00:03:10 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: GET https://huggingface.co/mcp "HTTP/1.1 405 Method Not Allowed"
+2026-09-01 00:03:10 - INFO - mcp.client.streamable_http - handle_get_stream:240 - GET stream disconnected, reconnecting in 1000ms...
+2026-09-01 00:03:10 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-09-01 00:03:10 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: DELETE https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-09-01 00:03:10 - INFO - main.service.mcp_client - load_tools:81 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-09-01 00:03:10 - INFO - main.service.agent_service - initialize:38 - Loaded 4 MCP tools
+2026-09-01 00:03:10 - INFO - main.service.agent_service - initialize:42 - Added hf_inference tool
+2026-09-01 00:03:10 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-09-01 00:03:10 - INFO - main.service.agent_service - initialize:52 - Agent Service initialized successfully
+2026-09-01 00:03:10 - INFO - main.routes.routes - set_agent_service:67 - Agent service initialized in routes. Service: AgentService
+2026-09-01 00:03:10 - INFO - main.app - lifespan:29 - ✓ Agent ready for medical related analysis and query...
+2026-09-01 00:03:10 - INFO - main.app - lifespan:30 - ============================================================
+2026-09-01 00:03:31 - INFO - main.service.rag_service - get_index:151 - Vector index not yet initialized, initializing services...
+2026-09-01 00:03:31 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-09-01 00:03:31 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-09-01 00:03:31 - INFO - main.service.agent_factory - create_embel_model:39 - Initializing Azure OpenAI Embed Model...
+2026-09-01 00:03:31 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-09-01 00:03:31 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-09-01 00:03:31 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-09-01 00:03:31 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-09-01 00:03:31 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medical_documents_embeddings...
+2026-09-01 00:03:31 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medical_documents_embeddings)
+2026-09-01 00:03:31 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-09-01 00:03:31 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-09-01 00:03:31 - INFO - main.service.fusion_retrieval - __init__:47 - fusion.init start table=medical_documents_embeddings top_k=4 configured_retrieval=vector+bm25
+2026-09-01 00:03:31 - INFO - main.service.fusion_retrieval - _init_retrievers:76 - fusion.retrievers initializing vector retriever table=medical_documents_embeddings
+2026-09-01 00:03:32 - INFO - main.service.fusion_retrieval - _init_retrievers:93 - fusion.retrievers loaded_bm25_nodes count=9
+2026-09-01 00:03:32 - INFO - main.service.fusion_retrieval - _init_retrievers:110 - fusion.retrievers enabled available_retrievers=vector+bm25
+2026-09-01 00:03:32 - INFO - main.service.fusion_retrieval - __init__:54 - fusion.init done ms=95.7 table=medical_documents_embeddings top_k=4 mode=reciprocal_rerank available_retrievers=vector+bm25
+2026-09-01 00:03:32 - INFO - main.service.fusion_retrieval - query:201 - fusion.query start query_chars=28
+2026-09-01 00:03:34 - INFO - main.service.fusion_retrieval - _select_retrieval_route:177 - fusion.route evaluated vector_results=4 vector_match=True bm25_results=4 bm25_keyword_match=True
+2026-09-01 00:03:34 - INFO - main.service.fusion_retrieval - query:206 - fusion.query selected retrieval_type=hybrid(vector+bm25)
+2026-09-01 00:03:44 - INFO - main.service.fusion_retrieval - query:212 - fusion.query done retrieval_type=hybrid(vector+bm25) ms=12523.6 answer_chars=2582
+2026-09-01 00:03:44 - INFO - main.service.fusion_retrieval - retrieve:236 - fusion.retrieve start query_chars=28
+2026-09-01 00:03:45 - INFO - main.service.fusion_retrieval - _select_retrieval_route:177 - fusion.route evaluated vector_results=4 vector_match=True bm25_results=4 bm25_keyword_match=True
+2026-09-01 00:03:45 - INFO - main.service.fusion_retrieval - retrieve:242 - fusion.retrieve selected retrieval_type=hybrid(vector+bm25)
+2026-09-01 00:03:45 - INFO - main.service.fusion_retrieval - retrieve:267 - fusion.retrieve done retrieval_type=hybrid(vector+bm25) results=4 ms=1316.1
+2026-09-01 00:04:17 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 073bb23739b26186aec9f0d2f9e3ae20: 0.90
+2026-09-01 00:04:21 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 073bb23739b26186aec9f0d2f9e3ae20: 1.00
+2026-09-01 00:05:36 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-09-01 00:05:36 - INFO - main.service.fusion_retrieval - __init__:47 - fusion.init start table=medical_documents_embeddings top_k=4 configured_retrieval=vector+bm25
+2026-09-01 00:05:36 - INFO - main.service.fusion_retrieval - _init_retrievers:76 - fusion.retrievers initializing vector retriever table=medical_documents_embeddings
+2026-09-01 00:05:36 - INFO - main.service.fusion_retrieval - _init_retrievers:93 - fusion.retrievers loaded_bm25_nodes count=9
+2026-09-01 00:05:36 - INFO - main.service.fusion_retrieval - _init_retrievers:110 - fusion.retrievers enabled available_retrievers=vector+bm25
+2026-09-01 00:05:36 - INFO - main.service.fusion_retrieval - __init__:54 - fusion.init done ms=93.0 table=medical_documents_embeddings top_k=4 mode=reciprocal_rerank available_retrievers=vector+bm25
+2026-09-01 00:05:36 - INFO - main.service.fusion_retrieval - query:201 - fusion.query start query_chars=23
+2026-09-01 00:05:37 - INFO - main.service.fusion_retrieval - _select_retrieval_route:177 - fusion.route evaluated vector_results=4 vector_match=True bm25_results=4 bm25_keyword_match=True
+2026-09-01 00:05:37 - INFO - main.service.fusion_retrieval - query:206 - fusion.query selected retrieval_type=hybrid(vector+bm25)
+2026-09-01 00:05:46 - INFO - main.service.fusion_retrieval - query:212 - fusion.query done retrieval_type=hybrid(vector+bm25) ms=10348.1 answer_chars=324
+2026-09-01 00:05:46 - INFO - main.service.fusion_retrieval - retrieve:236 - fusion.retrieve start query_chars=23
+2026-09-01 00:05:47 - INFO - main.service.fusion_retrieval - _select_retrieval_route:177 - fusion.route evaluated vector_results=4 vector_match=True bm25_results=4 bm25_keyword_match=True
+2026-09-01 00:05:47 - INFO - main.service.fusion_retrieval - retrieve:242 - fusion.retrieve selected retrieval_type=hybrid(vector+bm25)
+2026-09-01 00:05:47 - INFO - main.service.fusion_retrieval - retrieve:267 - fusion.retrieve done retrieval_type=hybrid(vector+bm25) results=4 ms=1300.9
+2026-09-01 00:05:55 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace d1b2d9b2aaddb341a09e9c43a75dbede: 0.90
+2026-09-01 00:05:59 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace d1b2d9b2aaddb341a09e9c43a75dbede: 0.20
+2026-09-01 00:06:08 - INFO - main.handoff.handoff_service - send_handoff_email:206 - Human handoff email sent successfully.
+2026-09-01 00:07:27 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-09-01 00:07:27 - INFO - main.service.fusion_retrieval - __init__:47 - fusion.init start table=medical_documents_embeddings top_k=4 configured_retrieval=vector+bm25
+2026-09-01 00:07:27 - INFO - main.service.fusion_retrieval - _init_retrievers:76 - fusion.retrievers initializing vector retriever table=medical_documents_embeddings
+2026-09-01 00:07:27 - INFO - main.service.fusion_retrieval - _init_retrievers:93 - fusion.retrievers loaded_bm25_nodes count=9
+2026-09-01 00:07:27 - INFO - main.service.fusion_retrieval - _init_retrievers:110 - fusion.retrievers enabled available_retrievers=vector+bm25
+2026-09-01 00:07:27 - INFO - main.service.fusion_retrieval - __init__:54 - fusion.init done ms=90.2 table=medical_documents_embeddings top_k=4 mode=reciprocal_rerank available_retrievers=vector+bm25
+2026-09-01 00:07:27 - INFO - main.service.fusion_retrieval - query:201 - fusion.query start query_chars=39
+2026-09-01 00:07:29 - INFO - main.service.fusion_retrieval - _select_retrieval_route:177 - fusion.route evaluated vector_results=4 vector_match=True bm25_results=4 bm25_keyword_match=True
+2026-09-01 00:07:29 - INFO - main.service.fusion_retrieval - query:206 - fusion.query selected retrieval_type=hybrid(vector+bm25)
+2026-09-01 00:07:35 - INFO - main.service.fusion_retrieval - query:212 - fusion.query done retrieval_type=hybrid(vector+bm25) ms=7984.2 answer_chars=402
+2026-09-01 00:07:35 - INFO - main.service.fusion_retrieval - retrieve:236 - fusion.retrieve start query_chars=39
+2026-09-01 00:07:37 - INFO - main.service.fusion_retrieval - _select_retrieval_route:177 - fusion.route evaluated vector_results=4 vector_match=True bm25_results=4 bm25_keyword_match=True
+2026-09-01 00:07:37 - INFO - main.service.fusion_retrieval - retrieve:242 - fusion.retrieve selected retrieval_type=hybrid(vector+bm25)
+2026-09-01 00:07:37 - INFO - main.service.fusion_retrieval - retrieve:267 - fusion.retrieve done retrieval_type=hybrid(vector+bm25) results=4 ms=1542.2
+2026-09-01 00:07:45 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace ac477da6182aaf0766b882a8aa36c186: 1.00
+2026-09-01 00:07:49 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace ac477da6182aaf0766b882a8aa36c186: 0.90
+2026-09-01 00:09:05 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-09-01 00:09:05 - INFO - main.service.fusion_retrieval - __init__:47 - fusion.init start table=medical_documents_embeddings top_k=4 configured_retrieval=vector+bm25
+2026-09-01 00:09:05 - INFO - main.service.fusion_retrieval - _init_retrievers:76 - fusion.retrievers initializing vector retriever table=medical_documents_embeddings
+2026-09-01 00:09:05 - INFO - main.service.fusion_retrieval - _init_retrievers:93 - fusion.retrievers loaded_bm25_nodes count=9
+2026-09-01 00:09:05 - INFO - main.service.fusion_retrieval - _init_retrievers:110 - fusion.retrievers enabled available_retrievers=vector+bm25
+2026-09-01 00:09:05 - INFO - main.service.fusion_retrieval - __init__:54 - fusion.init done ms=87.4 table=medical_documents_embeddings top_k=4 mode=reciprocal_rerank available_retrievers=vector+bm25
+2026-09-01 00:09:05 - INFO - main.service.fusion_retrieval - query:201 - fusion.query start query_chars=22
+2026-09-01 00:09:06 - INFO - main.service.fusion_retrieval - _select_retrieval_route:177 - fusion.route evaluated vector_results=4 vector_match=True bm25_results=4 bm25_keyword_match=True
+2026-09-01 00:09:06 - INFO - main.service.fusion_retrieval - query:206 - fusion.query selected retrieval_type=hybrid(vector+bm25)
+2026-09-01 00:09:19 - INFO - main.service.fusion_retrieval - query:212 - fusion.query done retrieval_type=hybrid(vector+bm25) ms=13989.3 answer_chars=2278
+2026-09-01 00:09:19 - INFO - main.service.fusion_retrieval - retrieve:236 - fusion.retrieve start query_chars=22
+2026-09-01 00:09:20 - INFO - main.service.fusion_retrieval - _select_retrieval_route:177 - fusion.route evaluated vector_results=4 vector_match=True bm25_results=4 bm25_keyword_match=True
+2026-09-01 00:09:20 - INFO - main.service.fusion_retrieval - retrieve:242 - fusion.retrieve selected retrieval_type=hybrid(vector+bm25)
+2026-09-01 00:09:21 - INFO - main.service.fusion_retrieval - retrieve:267 - fusion.retrieve done retrieval_type=hybrid(vector+bm25) results=4 ms=1700.0
+2026-09-01 00:09:43 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace bff50340acfa98a7667c7352df6cc271: 0.90
+2026-09-01 00:09:48 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace bff50340acfa98a7667c7352df6cc271: 0.90
+2026-09-01 00:10:15 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-09-01 00:10:15 - INFO - main.service.fusion_retrieval - __init__:47 - fusion.init start table=medical_documents_embeddings top_k=4 configured_retrieval=vector+bm25
+2026-09-01 00:10:15 - INFO - main.service.fusion_retrieval - _init_retrievers:76 - fusion.retrievers initializing vector retriever table=medical_documents_embeddings
+2026-09-01 00:10:15 - INFO - main.service.fusion_retrieval - _init_retrievers:93 - fusion.retrievers loaded_bm25_nodes count=9
+2026-09-01 00:10:15 - INFO - main.service.fusion_retrieval - _init_retrievers:110 - fusion.retrievers enabled available_retrievers=vector+bm25
+2026-09-01 00:10:15 - INFO - main.service.fusion_retrieval - __init__:54 - fusion.init done ms=92.3 table=medical_documents_embeddings top_k=4 mode=reciprocal_rerank available_retrievers=vector+bm25
+2026-09-01 00:10:15 - INFO - main.service.fusion_retrieval - query:201 - fusion.query start query_chars=41
+2026-09-01 00:10:16 - INFO - main.service.fusion_retrieval - _select_retrieval_route:177 - fusion.route evaluated vector_results=4 vector_match=True bm25_results=4 bm25_keyword_match=True
+2026-09-01 00:10:16 - INFO - main.service.fusion_retrieval - query:206 - fusion.query selected retrieval_type=hybrid(vector+bm25)
+2026-09-01 00:10:30 - INFO - main.service.fusion_retrieval - query:212 - fusion.query done retrieval_type=hybrid(vector+bm25) ms=15197.1 answer_chars=3378
+2026-09-01 00:10:30 - INFO - main.service.fusion_retrieval - retrieve:236 - fusion.retrieve start query_chars=41
+2026-09-01 00:10:31 - INFO - main.service.fusion_retrieval - _select_retrieval_route:177 - fusion.route evaluated vector_results=4 vector_match=True bm25_results=4 bm25_keyword_match=True
+2026-09-01 00:10:31 - INFO - main.service.fusion_retrieval - retrieve:242 - fusion.retrieve selected retrieval_type=hybrid(vector+bm25)
+2026-09-01 00:10:31 - INFO - main.service.fusion_retrieval - retrieve:267 - fusion.retrieve done retrieval_type=hybrid(vector+bm25) results=4 ms=1401.5
+2026-09-01 00:10:51 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace d65d9f820e2e55936a2dbd4030f117c7: 1.00
+2026-09-01 00:10:56 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace d65d9f820e2e55936a2dbd4030f117c7: 0.50
+2026-09-01 00:11:36 - INFO - main.app - lifespan:35 - ============================================================
+2026-09-01 00:11:36 - INFO - main.app - lifespan:36 - Shutting down MedLearn AI Assistant...
+2026-09-01 00:11:36 - INFO - main.app - lifespan:37 - ============================================================
+2026-09-01 00:13:31 - INFO - main.app - <module>:48 - FastAPI app initialized with version 1.0.0
+2026-09-01 00:13:31 - INFO - main.app - lifespan:23 - ============================================================
+2026-09-01 00:13:31 - INFO - main.app - lifespan:24 - Initializing MedLearn AI Assistant Agent...
+2026-09-01 00:13:31 - INFO - main.app - lifespan:25 - ============================================================
+2026-09-01 00:13:31 - INFO - main.service.agent_service - initialize:30 - Initializing Agent Service...
+2026-09-01 00:13:31 - INFO - main.service.mcp_client - load_tools:48 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-09-01 00:13:32 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-09-01 00:13:32 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:146 - Received session ID: 8ec24ee0-4dd9-40fc-891e-c8b6c88fe8a7
+2026-09-01 00:13:32 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 202 Accepted"
+2026-09-01 00:13:32 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: GET https://huggingface.co/mcp "HTTP/1.1 405 Method Not Allowed"
+2026-09-01 00:13:32 - INFO - mcp.client.streamable_http - handle_get_stream:240 - GET stream disconnected, reconnecting in 1000ms...
+2026-09-01 00:13:32 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-09-01 00:13:33 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: DELETE https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-09-01 00:13:33 - INFO - main.service.mcp_client - load_tools:81 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-09-01 00:13:33 - INFO - main.service.agent_service - initialize:38 - Loaded 4 MCP tools
+2026-09-01 00:13:33 - INFO - main.service.agent_service - initialize:42 - Added hf_inference tool
+2026-09-01 00:13:33 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-09-01 00:13:33 - INFO - main.service.agent_service - initialize:52 - Agent Service initialized successfully
+2026-09-01 00:13:33 - INFO - main.routes.routes - set_agent_service:67 - Agent service initialized in routes. Service: AgentService
+2026-09-01 00:13:33 - INFO - main.app - lifespan:29 - ✓ Agent ready for medical related analysis and query...
+2026-09-01 00:13:33 - INFO - main.app - lifespan:30 - ============================================================
+2026-09-01 00:13:40 - INFO - main.service.rag_service - get_index:151 - Vector index not yet initialized, initializing services...
+2026-09-01 00:13:40 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-09-01 00:13:40 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-09-01 00:13:40 - INFO - main.service.agent_factory - create_embel_model:39 - Initializing Azure OpenAI Embed Model...
+2026-09-01 00:13:40 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-09-01 00:13:40 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-09-01 00:13:40 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-09-01 00:13:40 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-09-01 00:13:40 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medical_documents_embeddings...
+2026-09-01 00:13:40 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medical_documents_embeddings)
+2026-09-01 00:13:40 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-09-01 00:13:40 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-09-01 00:13:40 - INFO - main.service.fusion_retrieval - __init__:48 - fusion.init done ms=96.7 table=medical_documents_embeddings top_k=4 mode=reciprocal_rerank
+2026-09-01 00:14:20 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 99b7b2153cfdc44ed6e60021413955ff: 1.00
+2026-09-01 00:14:27 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 99b7b2153cfdc44ed6e60021413955ff: 0.60
+2026-09-01 00:16:04 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-09-01 00:16:04 - INFO - main.service.fusion_retrieval - __init__:48 - fusion.init done ms=85.1 table=medical_documents_embeddings top_k=4 mode=reciprocal_rerank
+2026-09-01 00:16:17 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace a4416b0b0ed72cae7192f93cfde8e59c: 1.00
+2026-09-01 00:16:22 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace a4416b0b0ed72cae7192f93cfde8e59c: 1.00
+2026-09-01 00:17:49 - INFO - main.app - lifespan:35 - ============================================================
+2026-09-01 00:17:49 - INFO - main.app - lifespan:36 - Shutting down MedLearn AI Assistant...
+2026-09-01 00:17:49 - INFO - main.app - lifespan:37 - ============================================================
+2026-09-01 00:19:37 - INFO - main.app - <module>:48 - FastAPI app initialized with version 1.0.0
+2026-09-01 00:19:37 - INFO - main.app - lifespan:23 - ============================================================
+2026-09-01 00:19:37 - INFO - main.app - lifespan:24 - Initializing MedLearn AI Assistant Agent...
+2026-09-01 00:19:37 - INFO - main.app - lifespan:25 - ============================================================
+2026-09-01 00:19:37 - INFO - main.service.agent_service - initialize:30 - Initializing Agent Service...
+2026-09-01 00:19:37 - INFO - main.service.mcp_client - load_tools:48 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-09-01 00:19:38 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-09-01 00:19:38 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:146 - Received session ID: cb9bf549-d33d-4ecc-8389-ac59449814e4
+2026-09-01 00:19:38 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 202 Accepted"
+2026-09-01 00:19:38 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: GET https://huggingface.co/mcp "HTTP/1.1 405 Method Not Allowed"
+2026-09-01 00:19:38 - INFO - mcp.client.streamable_http - handle_get_stream:240 - GET stream disconnected, reconnecting in 1000ms...
+2026-09-01 00:19:38 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-09-01 00:19:38 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: DELETE https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-09-01 00:19:38 - INFO - main.service.mcp_client - load_tools:81 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-09-01 00:19:38 - INFO - main.service.agent_service - initialize:38 - Loaded 4 MCP tools
+2026-09-01 00:19:38 - INFO - main.service.agent_service - initialize:42 - Added hf_inference tool
+2026-09-01 00:19:38 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-09-01 00:19:38 - INFO - main.service.agent_service - initialize:52 - Agent Service initialized successfully
+2026-09-01 00:19:38 - INFO - main.routes.routes - set_agent_service:67 - Agent service initialized in routes. Service: AgentService
+2026-09-01 00:19:38 - INFO - main.app - lifespan:29 - ✓ Agent ready for medical related analysis and query...
+2026-09-01 00:19:38 - INFO - main.app - lifespan:30 - ============================================================
+2026-09-01 00:19:45 - INFO - main.service.rag_service - get_index:151 - Vector index not yet initialized, initializing services...
+2026-09-01 00:19:45 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-09-01 00:19:45 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-09-01 00:19:45 - INFO - main.service.agent_factory - create_embel_model:39 - Initializing Azure OpenAI Embed Model...
+2026-09-01 00:19:45 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-09-01 00:19:45 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-09-01 00:19:45 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-09-01 00:19:45 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-09-01 00:19:45 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medical_documents_embeddings...
+2026-09-01 00:19:45 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medical_documents_embeddings)
+2026-09-01 00:19:45 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-09-01 00:19:45 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-09-01 00:19:45 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medical_documents_embeddings top_k=4 configured_retrieval=vector+bm25
+2026-09-01 00:19:45 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medical_documents_embeddings
+2026-09-01 00:19:45 - INFO - main.service.fusion_retrieval - _init_retrievers:91 - fusion.retrievers loaded_bm25_nodes count=9
+2026-09-01 00:19:45 - INFO - main.service.fusion_retrieval - _init_retrievers:113 - fusion.retrievers configured retrieval_type=hybrid(vector+bm25) vector_enabled=True bm25_enabled=True
+2026-09-01 00:19:45 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=98.2 table=medical_documents_embeddings top_k=4 mode=reciprocal_rerank retrieval_type=hybrid(vector+bm25)
+2026-09-01 00:19:45 - INFO - main.service.fusion_retrieval - query:142 - fusion.query start retrieval_type=hybrid(vector+bm25) retriever=QueryFusionRetriever query_chars=43
+2026-09-01 00:19:52 - INFO - main.service.fusion_retrieval - query:156 - fusion.query done retrieval_type=hybrid(vector+bm25) ms=7497.0 answer_chars=206
+2026-09-01 00:19:52 - INFO - main.service.fusion_retrieval - retrieve:179 - fusion.retrieve start retrieval_type=hybrid(vector+bm25) retriever=QueryFusionRetriever query_chars=43
+2026-09-01 00:19:53 - INFO - main.service.fusion_retrieval - retrieve:209 - fusion.retrieve done retrieval_type=hybrid(vector+bm25) results=4 ms=1003.9
+2026-09-01 00:19:59 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 14690544f582920432056bb6828c5c50: 1.00
+2026-09-01 00:20:03 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 14690544f582920432056bb6828c5c50: 0.50
+2026-09-01 00:21:36 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-09-01 00:21:36 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medical_documents_embeddings top_k=4 configured_retrieval=vector+bm25
+2026-09-01 00:21:36 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medical_documents_embeddings
+2026-09-01 00:21:36 - INFO - main.service.fusion_retrieval - _init_retrievers:91 - fusion.retrievers loaded_bm25_nodes count=9
+2026-09-01 00:21:36 - INFO - main.service.fusion_retrieval - _init_retrievers:113 - fusion.retrievers configured retrieval_type=hybrid(vector+bm25) vector_enabled=True bm25_enabled=True
+2026-09-01 00:21:36 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=85.9 table=medical_documents_embeddings top_k=4 mode=reciprocal_rerank retrieval_type=hybrid(vector+bm25)
+2026-09-01 00:21:36 - INFO - main.service.fusion_retrieval - query:142 - fusion.query start retrieval_type=hybrid(vector+bm25) retriever=QueryFusionRetriever query_chars=41
+2026-09-01 00:21:50 - INFO - main.service.fusion_retrieval - query:156 - fusion.query done retrieval_type=hybrid(vector+bm25) ms=13604.8 answer_chars=2755
+2026-09-01 00:21:50 - INFO - main.service.fusion_retrieval - retrieve:179 - fusion.retrieve start retrieval_type=hybrid(vector+bm25) retriever=QueryFusionRetriever query_chars=41
+2026-09-01 00:21:51 - INFO - main.service.fusion_retrieval - retrieve:209 - fusion.retrieve done retrieval_type=hybrid(vector+bm25) results=4 ms=1042.9
+2026-09-01 00:22:07 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace d909f7e2805b7b8a7013b4821a796826: 1.00
+2026-09-01 00:22:13 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace d909f7e2805b7b8a7013b4821a796826: 0.90
+2026-09-01 00:25:03 - INFO - main.app - lifespan:35 - ============================================================
+2026-09-01 00:25:03 - INFO - main.app - lifespan:36 - Shutting down MedLearn AI Assistant...
+2026-09-01 00:25:03 - INFO - main.app - lifespan:37 - ============================================================

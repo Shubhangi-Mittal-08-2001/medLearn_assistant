@@ -11,7 +11,13 @@ from dotenv import load_dotenv
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
 
-from main.service.rag_service import get_query_engine, add_documents_to_index, process_document
+from main.service.rag_service import (
+    add_documents_to_index,
+    create_vector_store,
+    get_index,
+    process_document,
+)
+from main.service.fusion_retrieval import FusionRetrievalService
 from main.evaluation.dataset import get_langfuse_client
 from main.evaluation.dataset_evaluation import (
     evaluate_faithfulness_score,
@@ -48,7 +54,7 @@ IMAGES_FOLDER = os.path.join(BACKEND_DIR, os.getenv('IMAGES_FOLDER', 'stored_ima
 
 MAX_QUERY_LENGTH = 2000
 MIN_SIMILARITY_TOP_K = 1
-MAX_SIMILARITY_TOP_K = 20
+MAX_SIMILARITY_TOP_K = 4
 
 # Agent service will be set by app.py
 _agent_service = None
@@ -221,21 +227,27 @@ async def query_rag(request: QueryRequest, background_tasks: BackgroundTasks):
      # ----------------------------------------------------
         # 1. RAG Query
         # ----------------------------------------------------
-        query_engine = get_query_engine(similarity_top_k=MAX_SIMILARITY_TOP_K)
-        response = query_engine.query(request.question)
-        answer = str(response)
+        # Ensure the shared LLM and embedding settings are initialized before
+        # constructing the fusion query engine.
+        get_index()
+        fusion_service = FusionRetrievalService(
+            vector_store=create_vector_store(),
+            table_name=os.getenv("DB_TABLE_NAME", "medical_documents_embeddings"),
+            similarity_top_k=MAX_SIMILARITY_TOP_K,
+        )
+        answer = fusion_service.query(request.question)
 
-        # Build full retrieved chunks 
-        full_chunks = []
-        if hasattr(response, "source_nodes"):
-            for node in response.source_nodes:
-                full_chunks.append({
-                    "chunk_id": node.node_id,
-                    "text": node.text,
-                    "source": node.metadata.get("file_path"),
-                    "score": float(node.score),
-                    "metadata": node.metadata
-                })
+        # Retrieve the same fusion-ranked chunks for evaluation and handoff context.
+        full_chunks = [
+            {
+                "chunk_id": None,
+                "text": chunk.text,
+                "source": chunk.source,
+                "score": float(chunk.score) if chunk.score is not None else None,
+                "metadata": {},
+            }
+            for chunk in fusion_service.retrieve(request.question)
+        ]
 
         eval_context = "\n\n".join([c["text"] for c in full_chunks])
 # ----------------------------------------------------
