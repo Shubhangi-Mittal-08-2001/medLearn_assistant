@@ -1387,6 +1387,39 @@ wheels = [
 ]
 
 [[package]]
+name = "llama-cloud"
+version = "0.1.46"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "httpx" },
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/40/f3/f4d6520f8d546e6c5a02f6ebeed5c09774a074b8d2c24ad559ace97a56a6/llama_cloud-0.1.46.tar.gz", hash = "sha256:e86f8791c053590d70cc59e0fc13ce72f9b681a8e658bc61df86d0285288d8ee", size = 127752, upload-time = "2026-01-21T18:40:57.103Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c4/3a/6caaea28c8c804add33c91d356ed7d5a5412d6c9598e1450af95a15e0bcd/llama_cloud-0.1.46-py3-none-any.whl", hash = "sha256:6c6546c09c04a038c86d84d42f00eae8fd3bff49991ad3aab844bd866ecdf352", size = 361989, upload-time = "2026-01-21T18:40:54.863Z" },
+]
+
+[[package]]
+name = "llama-cloud-services"
+version = "0.6.94"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "llama-cloud" },
+    { name = "llama-index-core" },
+    { name = "packaging" },
+    { name = "platformdirs" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "tenacity" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d3/91/c3c94a58c44d0a12e0df2d5038b188fc283877f56cf2f6c41c60f43258e6/llama_cloud_services-0.6.94.tar.gz", hash = "sha256:127b8440d3d3a964d0c4b3f5fe7fcac3ead482f7645971cc8ae30768dcf63306", size = 64114, upload-time = "2026-02-13T23:29:40.454Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/14/ab/876486e4f1c137cfeca8f876abd18eeec35a66a0fd8adb15afba7b28aa8c/llama_cloud_services-0.6.94-py3-none-any.whl", hash = "sha256:ac89785f3689d71298511f751bcf4ca16952a616bd75ff06e0ff164f04b0775b", size = 77098, upload-time = "2026-02-13T23:29:38.958Z" },
+]
+
+[[package]]
 name = "llama-index-core"
 version = "0.14.10"
 source = { registry = "https://pypi.org/simple" }
@@ -1561,6 +1594,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/74/f8/cb9968d2453b16dc8951b8542ea827a59b937ecb0aa1a06d3ca418a311f4/llama_index_workflows-2.23.3.tar.gz", hash = "sha256:fba140ea4d4aa7e7ca58f3ddc2526b92bfb31bfaf45ab2b4345401ae527061b4", size = 138873, upload-time = "2026-08-22T14:26:19.13Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/bf/35/27a651cee0c4e4540a5b65aaec1293f52e153b870accab7f8472d035809b/llama_index_workflows-2.23.3-py3-none-any.whl", hash = "sha256:d7ad51363ba4817b4140526c5e785d2f143861f618823456e2f379adfe0b321b", size = 166772, upload-time = "2026-08-22T14:26:17.911Z" },
+]
+
+[[package]]
+name = "llama-parse"
+version = "0.6.83"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "llama-cloud-services" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b9/e2/072467f4c1069d754af42f774a931910db925eaecdbfe99dac90e9c9ae32/llama_parse-0.6.83.tar.gz", hash = "sha256:2ab25d72c6615c1e03137ed734f03b48fa6e2f05f68ff835e2c582e2c2adb46b", size = 3582, upload-time = "2025-11-25T13:43:56.462Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/04/f2/b2262e42a47fb71421e39fdfc0c84d10061997c03405d1f9dcce1a929704/llama_parse-0.6.83-py3-none-any.whl", hash = "sha256:8ab0c3a337b719269438399505bb6f4ea396ebf7a716a2e00df633f8ea87048b", size = 4881, upload-time = "2025-11-25T13:43:54.491Z" },
 ]
 
 [[package]]
@@ -1777,6 +1822,7 @@ dependencies = [
     { name = "llama-index-retrievers-bm25" },
     { name = "llama-index-tools-mcp" },
     { name = "llama-index-vector-stores-postgres" },
+    { name = "llama-parse" },
     { name = "matplotlib" },
     { name = "mcp" },
     { name = "numpy" },
@@ -1809,6 +1855,7 @@ requires-dist = [
     { name = "llama-index-retrievers-bm25", specifier = ">=0.7.1" },
     { name = "llama-index-tools-mcp" },
     { name = "llama-index-vector-stores-postgres", specifier = "==0.7.1" },
+    { name = "llama-parse", specifier = "==0.6.83" },
     { name = "matplotlib", specifier = ">=3.7.0" },
     { name = "mcp", specifier = ">=0.1.0" },
     { name = "numpy", specifier = ">=1.24.0" },

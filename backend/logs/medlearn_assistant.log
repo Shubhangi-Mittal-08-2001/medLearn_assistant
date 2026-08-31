@@ -1,0 +1,165 @@
+2026-08-31 18:17:02 - INFO - main.app - <module>:48 - FastAPI app initialized with version 1.0.0
+2026-08-31 18:17:03 - INFO - main.app - lifespan:23 - ============================================================
+2026-08-31 18:17:03 - INFO - main.app - lifespan:24 - Initializing MedLearn AI Assistant Agent...
+2026-08-31 18:17:03 - INFO - main.app - lifespan:25 - ============================================================
+2026-08-31 18:17:03 - INFO - main.service.agent_service - initialize:30 - Initializing Agent Service...
+2026-08-31 18:17:03 - INFO - main.service.mcp_client - load_tools:48 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-08-31 18:17:03 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 18:17:03 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:146 - Received session ID: 7024ea3d-75e2-4eee-96ca-089f8888d67c
+2026-08-31 18:17:03 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: GET https://huggingface.co/mcp "HTTP/1.1 405 Method Not Allowed"
+2026-08-31 18:17:03 - INFO - mcp.client.streamable_http - handle_get_stream:240 - GET stream disconnected, reconnecting in 1000ms...
+2026-08-31 18:17:03 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 202 Accepted"
+2026-08-31 18:17:04 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 18:17:04 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: DELETE https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 18:17:04 - INFO - main.service.mcp_client - load_tools:81 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-08-31 18:17:04 - INFO - main.service.agent_service - initialize:38 - Loaded 4 MCP tools
+2026-08-31 18:17:04 - INFO - main.service.agent_service - initialize:42 - Added hf_inference tool
+2026-08-31 18:17:04 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-08-31 18:17:04 - INFO - main.service.agent_service - initialize:52 - Agent Service initialized successfully
+2026-08-31 18:17:04 - INFO - main.routes.routes - set_agent_service:61 - Agent service initialized in routes. Service: AgentService
+2026-08-31 18:17:04 - INFO - main.app - lifespan:29 - ✓ Agent ready for medical related analysis and query...
+2026-08-31 18:17:04 - INFO - main.app - lifespan:30 - ============================================================
+2026-08-31 18:17:27 - INFO - main.routes.routes - upload_document:119 - [UPLOAD] Starting document upload: medlearn.pdf
+2026-08-31 18:17:27 - INFO - main.routes.routes - upload_document:136 - [UPLOAD] File read: medlearn.pdf, Size: 135171 bytes (132.00 KB)
+2026-08-31 18:17:27 - INFO - main.routes.routes - upload_document:153 - [UPLOAD] Temporary file created: C:\Users\PRATHA~1\AppData\Local\Temp\tmprms0ejyq.pdf
+2026-08-31 18:17:27 - ERROR - main.routes.routes - upload_document:177 - [UPLOAD] Unexpected error while processing upload medlearn.pdf: process_document() missing 1 required positional argument: 'pdf_path'
+Traceback (most recent call last):
+  File "D:\Shubhangi\NIIT_project\course3\medlearn-assistant\backend\main\routes\routes.py", line 158, in upload_document
+    result = process_document(
+             ^^^^^^^^^^^^^^^^^
+TypeError: process_document() missing 1 required positional argument: 'pdf_path'
+2026-08-31 18:22:33 - INFO - main.app - lifespan:35 - ============================================================
+2026-08-31 18:22:33 - INFO - main.app - lifespan:36 - Shutting down MedLearn AI Assistant...
+2026-08-31 18:22:33 - INFO - main.app - lifespan:37 - ============================================================
+2026-08-31 18:24:20 - INFO - main.app - <module>:48 - FastAPI app initialized with version 1.0.0
+2026-08-31 18:24:20 - INFO - main.app - lifespan:23 - ============================================================
+2026-08-31 18:24:20 - INFO - main.app - lifespan:24 - Initializing MedLearn AI Assistant Agent...
+2026-08-31 18:24:20 - INFO - main.app - lifespan:25 - ============================================================
+2026-08-31 18:24:20 - INFO - main.service.agent_service - initialize:30 - Initializing Agent Service...
+2026-08-31 18:24:20 - INFO - main.service.mcp_client - load_tools:48 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-08-31 18:24:21 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 18:24:21 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:146 - Received session ID: 3065d098-2934-4389-bfcd-1176ab97675c
+2026-08-31 18:24:21 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 202 Accepted"
+2026-08-31 18:24:21 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: GET https://huggingface.co/mcp "HTTP/1.1 405 Method Not Allowed"
+2026-08-31 18:24:21 - INFO - mcp.client.streamable_http - handle_get_stream:240 - GET stream disconnected, reconnecting in 1000ms...
+2026-08-31 18:24:21 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 18:24:21 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: DELETE https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 18:24:21 - INFO - main.service.mcp_client - load_tools:81 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-08-31 18:24:21 - INFO - main.service.agent_service - initialize:38 - Loaded 4 MCP tools
+2026-08-31 18:24:21 - INFO - main.service.agent_service - initialize:42 - Added hf_inference tool
+2026-08-31 18:24:21 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-08-31 18:24:21 - INFO - main.service.agent_service - initialize:52 - Agent Service initialized successfully
+2026-08-31 18:24:21 - INFO - main.routes.routes - set_agent_service:61 - Agent service initialized in routes. Service: AgentService
+2026-08-31 18:24:21 - INFO - main.app - lifespan:29 - ✓ Agent ready for medical related analysis and query...
+2026-08-31 18:24:21 - INFO - main.app - lifespan:30 - ============================================================
+2026-08-31 18:24:33 - INFO - main.routes.routes - upload_document:119 - [UPLOAD] Starting document upload: medlearn.pdf
+2026-08-31 18:24:33 - INFO - main.routes.routes - upload_document:136 - [UPLOAD] File read: medlearn.pdf, Size: 135171 bytes (132.00 KB)
+2026-08-31 18:24:33 - INFO - main.routes.routes - upload_document:153 - [UPLOAD] Temporary file created: C:\Users\PRATHA~1\AppData\Local\Temp\tmp2wraced8.pdf
+2026-08-31 18:24:33 - INFO - main.service.rag_service - process_document:283 - Processing document (boilerplate): C:\Users\PRATHA~1\AppData\Local\Temp\tmp2wraced8.pdf
+2026-08-31 18:24:33 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-08-31 18:24:33 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-08-31 18:24:33 - INFO - main.service.agent_factory - create_embel_model:39 - Initializing Azure OpenAI Embed Model...
+2026-08-31 18:24:33 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-08-31 18:24:33 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-08-31 18:24:33 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-08-31 18:24:33 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-08-31 18:24:33 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medical_documents_embeddings...
+2026-08-31 18:24:33 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medical_documents_embeddings)
+2026-08-31 18:24:33 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-08-31 18:24:33 - INFO - main.service.rag_service - process_document:319 - Step 1: Loading and parsing PDF document with LlamaParse...
+2026-08-31 18:24:33 - INFO - main.service.rag_service - load_documents:243 - Loading PDF document: C:\Users\PRATHA~1\AppData\Local\Temp\tmp2wraced8.pdf
+2026-08-31 18:24:33 - ERROR - main.service.rag_service - load_documents:246 - Missing LLAMA_CLOUD_API_KEY in environment
+2026-08-31 18:26:00 - INFO - main.app - lifespan:35 - ============================================================
+2026-08-31 18:26:00 - INFO - main.app - lifespan:36 - Shutting down MedLearn AI Assistant...
+2026-08-31 18:26:00 - INFO - main.app - lifespan:37 - ============================================================
+2026-08-31 18:26:13 - INFO - main.app - <module>:48 - FastAPI app initialized with version 1.0.0
+2026-08-31 18:26:13 - INFO - main.app - lifespan:23 - ============================================================
+2026-08-31 18:26:13 - INFO - main.app - lifespan:24 - Initializing MedLearn AI Assistant Agent...
+2026-08-31 18:26:13 - INFO - main.app - lifespan:25 - ============================================================
+2026-08-31 18:26:13 - INFO - main.service.agent_service - initialize:30 - Initializing Agent Service...
+2026-08-31 18:26:13 - INFO - main.service.mcp_client - load_tools:48 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-08-31 18:26:13 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 18:26:13 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:146 - Received session ID: 25e73088-722f-473a-9c16-a9bdf8fa2818
+2026-08-31 18:26:14 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 202 Accepted"
+2026-08-31 18:26:14 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: GET https://huggingface.co/mcp "HTTP/1.1 405 Method Not Allowed"
+2026-08-31 18:26:14 - INFO - mcp.client.streamable_http - handle_get_stream:240 - GET stream disconnected, reconnecting in 1000ms...
+2026-08-31 18:26:14 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: POST https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 18:26:14 - INFO - httpx2 - _send_single_request:1923 - HTTP Request: DELETE https://huggingface.co/mcp "HTTP/1.1 200 OK"
+2026-08-31 18:26:14 - INFO - main.service.mcp_client - load_tools:81 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-08-31 18:26:14 - INFO - main.service.agent_service - initialize:38 - Loaded 4 MCP tools
+2026-08-31 18:26:14 - INFO - main.service.agent_service - initialize:42 - Added hf_inference tool
+2026-08-31 18:26:14 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-08-31 18:26:14 - INFO - main.service.agent_service - initialize:52 - Agent Service initialized successfully
+2026-08-31 18:26:14 - INFO - main.routes.routes - set_agent_service:61 - Agent service initialized in routes. Service: AgentService
+2026-08-31 18:26:14 - INFO - main.app - lifespan:29 - ✓ Agent ready for medical related analysis and query...
+2026-08-31 18:26:14 - INFO - main.app - lifespan:30 - ============================================================
+2026-08-31 18:26:19 - INFO - main.routes.routes - upload_document:119 - [UPLOAD] Starting document upload: medlearn.pdf
+2026-08-31 18:26:19 - INFO - main.routes.routes - upload_document:136 - [UPLOAD] File read: medlearn.pdf, Size: 135171 bytes (132.00 KB)
+2026-08-31 18:26:19 - INFO - main.routes.routes - upload_document:153 - [UPLOAD] Temporary file created: C:\Users\PRATHA~1\AppData\Local\Temp\tmp3wx0efuq.pdf
+2026-08-31 18:26:19 - INFO - main.service.rag_service - process_document:283 - Processing document (boilerplate): C:\Users\PRATHA~1\AppData\Local\Temp\tmp3wx0efuq.pdf
+2026-08-31 18:26:19 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-08-31 18:26:19 - INFO - main.service.agent_factory - create_llm:28 - Initializing Azure OpenAI LLM...
+2026-08-31 18:26:19 - INFO - main.service.agent_factory - create_embel_model:39 - Initializing Azure OpenAI Embed Model...
+2026-08-31 18:26:19 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-08-31 18:26:19 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-08-31 18:26:19 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-08-31 18:26:19 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-08-31 18:26:19 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medical_documents_embeddings...
+2026-08-31 18:26:19 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medical_documents_embeddings)
+2026-08-31 18:26:19 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-08-31 18:26:19 - INFO - main.service.rag_service - process_document:319 - Step 1: Loading and parsing PDF document with LlamaParse...
+2026-08-31 18:26:19 - INFO - main.service.rag_service - load_documents:243 - Loading PDF document: C:\Users\PRATHA~1\AppData\Local\Temp\tmp3wx0efuq.pdf
+2026-08-31 18:26:19 - INFO - main.service.rag_service - load_documents:251 - Initializing LlamaParse parser...
+2026-08-31 18:26:51 - INFO - main.service.rag_service - load_documents:264 - Document parsed successfully, extracted 9545 characters of text
+2026-08-31 18:26:51 - INFO - main.service.rag_service - process_document:321 - Creating semantic text chunks...
+2026-08-31 18:26:51 - INFO - main.service.rag_service - process_document:323 - Step 1.1: Creating semantic text chunks...
+2026-08-31 18:26:51 - INFO - main.service.semantic_chunking - process:45 - Processing text with semantic chunking (length: 9545 characters)
+2026-08-31 18:26:57 - INFO - main.service.semantic_chunking - process:60 - Created 4 semantic chunks from text
+2026-08-31 18:26:57 - INFO - main.service.rag_service - process_document:334 - Document loaded successfully, text length: 9545 characters
+2026-08-31 18:26:57 - INFO - main.service.rag_service - process_document:338 - Step 2: Extracting markdown tables from document...
+2026-08-31 18:26:57 - INFO - main.service.table_extraction - find_markdown_tables:26 - Extracting markdown tables (boilerplate)
+2026-08-31 18:26:57 - INFO - main.service.table_extraction - find_markdown_tables:63 - Extracted 4 markdown table(s) from document
+2026-08-31 18:26:57 - INFO - main.service.rag_service - process_document:341 - Found 4 table(s) in the document
+2026-08-31 18:26:57 - INFO - main.service.table_processing - build_nodes_from_tables:80 - Building nodes from tables (boilerplate)
+2026-08-31 18:26:57 - INFO - main.service.table_processing - build_nodes_from_tables:92 - Building nodes from 1 table(s)
+2026-08-31 18:26:57 - INFO - main.service.table_processing - summarize_table:28 - Summarizing table (boilerplate)
+2026-08-31 18:27:00 - INFO - main.service.table_processing - build_nodes_from_tables:116 - Created 1 TextNode(s) with table summaries
+2026-08-31 18:27:00 - INFO - main.service.table_processing - build_nodes_from_tables:80 - Building nodes from tables (boilerplate)
+2026-08-31 18:27:00 - INFO - main.service.table_processing - build_nodes_from_tables:92 - Building nodes from 1 table(s)
+2026-08-31 18:27:00 - INFO - main.service.table_processing - summarize_table:28 - Summarizing table (boilerplate)
+2026-08-31 18:27:05 - INFO - main.service.table_processing - build_nodes_from_tables:116 - Created 1 TextNode(s) with table summaries
+2026-08-31 18:27:05 - INFO - main.service.table_processing - build_nodes_from_tables:80 - Building nodes from tables (boilerplate)
+2026-08-31 18:27:05 - INFO - main.service.table_processing - build_nodes_from_tables:92 - Building nodes from 1 table(s)
+2026-08-31 18:27:05 - INFO - main.service.table_processing - summarize_table:28 - Summarizing table (boilerplate)
+2026-08-31 18:27:09 - INFO - main.service.table_processing - build_nodes_from_tables:116 - Created 1 TextNode(s) with table summaries
+2026-08-31 18:27:09 - INFO - main.service.table_processing - build_nodes_from_tables:80 - Building nodes from tables (boilerplate)
+2026-08-31 18:27:09 - INFO - main.service.table_processing - build_nodes_from_tables:92 - Building nodes from 1 table(s)
+2026-08-31 18:27:09 - INFO - main.service.table_processing - summarize_table:28 - Summarizing table (boilerplate)
+2026-08-31 18:27:15 - INFO - main.service.table_processing - build_nodes_from_tables:116 - Created 1 TextNode(s) with table summaries
+2026-08-31 18:27:15 - INFO - main.service.rag_service - process_document:364 - Step 3: Extracting images from PDF...
+2026-08-31 18:27:15 - INFO - main.service.image_extraction - extract_images_from_pdf:30 - Extracting images from PDF: C:\Users\PRATHA~1\AppData\Local\Temp\tmp3wx0efuq.pdf
+2026-08-31 18:27:15 - INFO - main.service.image_extraction - extract_images_from_pdf:31 - Output directory: C:\Users\PRATHA~1\AppData\Local\Temp\tmp1d_f7h2s
+2026-08-31 18:27:15 - INFO - main.service.image_extraction - extract_images_from_pdf:42 - Opening PDF file: C:\Users\PRATHA~1\AppData\Local\Temp\tmp3wx0efuq.pdf
+2026-08-31 18:27:15 - INFO - main.service.image_extraction - extract_images_from_pdf:45 - PDF opened successfully, total pages: 4
+2026-08-31 18:27:15 - INFO - main.service.image_extraction - extract_images_from_pdf:58 - Found 1 image(s) on page 2
+2026-08-31 18:27:15 - INFO - main.service.image_extraction - extract_images_from_pdf:84 - Image extraction completed: 1 images extracted from 4 pages
+2026-08-31 18:27:15 - INFO - main.service.rag_service - process_document:372 - Extracted 1 images from PDF
+2026-08-31 18:27:15 - INFO - main.service.captioning - generate_caption:29 - Generating caption for image: C:\Users\PRATHA~1\AppData\Local\Temp\tmp1d_f7h2s\extracted_image_page1_img0.jpeg
+2026-08-31 18:27:15 - INFO - main.service.captioning - generate_caption:92 - Calling Azure OpenAI vision API for caption generation (deployment: gpt-5-mini)
+2026-08-31 18:27:21 - INFO - main.service.captioning - generate_caption:113 - Caption generated successfully (length: 365 characters): An anatomical diagram of a muscle spindle and spinal reflex arc (Ia/II afferents, γ and α motoneuron...
+2026-08-31 18:27:21 - ERROR - main.service.rag_service - process_document:395 - Failed to process image C:\Users\PRATHA~1\AppData\Local\Temp\tmp1d_f7h2s\extracted_image_page1_img0.jpeg: object of type 'TextNode' has no len()
+Traceback (most recent call last):
+  File "D:\Shubhangi\NIIT_project\course3\medlearn-assistant\backend\main\service\rag_service.py", line 393, in process_document
+    logger.debug(f"Image processed, created {len(image_node)} node(s) with permanent paths")
+                                             ^^^^^^^^^^^^^^^
+TypeError: object of type 'TextNode' has no len()
+2026-08-31 18:27:21 - INFO - main.service.rag_service - process_document:409 - Total nodes created: 9 (text: 4, tables: 4, images: 1)
+2026-08-31 18:27:21 - INFO - main.service.rag_service - process_document:412 - Step 5: Creating PostgreSQL vector store and indexing documents...
+2026-08-31 18:27:21 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-08-31 18:27:21 - INFO - main.service.rag_service - process_document:426 - Inserting 9 nodes into PGVector...
+2026-08-31 18:27:23 - INFO - main.service.rag_service - process_document:429 - Nodes inserted successfully.
+2026-08-31 18:27:23 - INFO - main.service.rag_service - process_document:430 - Document processing completed successfully
+2026-08-31 18:27:23 - INFO - main.routes.routes - upload_document:163 - [UPLOAD] Document processed successfully: 9 document(s) indexed from medlearn.pdf
+2026-08-31 18:31:10 - INFO - main.app - lifespan:35 - ============================================================
+2026-08-31 18:31:10 - INFO - main.app - lifespan:36 - Shutting down MedLearn AI Assistant...
+2026-08-31 18:31:10 - INFO - main.app - lifespan:37 - ============================================================

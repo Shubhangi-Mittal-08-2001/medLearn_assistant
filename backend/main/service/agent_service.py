@@ -5,8 +5,9 @@ from main.service.mcp_client import HuggingFaceMCPService
 from main.service.agent_factory import create_agent
 from main.tools.custom_tools import custom_inference_tool
 from llama_index.core.workflow import Context
+from main.logs.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AgentService:
@@ -18,6 +19,7 @@ class AgentService:
         self._initialized = False
         self._mcp_connected = False
         self._context = None
+        logger.debug("AgentService instance created")
     
     async def initialize(self):
         """Initialize MCP connection and agent"""

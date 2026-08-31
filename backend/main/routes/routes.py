@@ -11,8 +11,7 @@ from dotenv import load_dotenv
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
 
-from main.service.rag_service import get_query_engine, add_documents_to_index
-from backend.main.service.chunking_service import DocumentProcessor
+from main.service.rag_service import get_query_engine, add_documents_to_index, process_document
 from main.evaluation.dataset import get_langfuse_client
 from main.evaluation.dataset_evaluation import (
     evaluate_faithfulness_score,
@@ -29,8 +28,9 @@ import secrets
 import datetime
 
 from main.schema.models import QueryRequest,QueryResponse,UploadResponse
+from main.logs.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -58,12 +58,14 @@ def set_agent_service(agent_service):
     """Set the agent service instance for use in routes."""
     global _agent_service
     _agent_service = agent_service
-    logger.info("Agent service initialized in routes")
+    logger.info(f"Agent service initialized in routes. Service: {type(agent_service).__name__}")
+    logger.debug(f"Agent initialized: {_agent_service.is_initialized() if hasattr(_agent_service, 'is_initialized') else 'unknown'}")
 
 
 @router.get("/health")
 async def health_check():
     """Health check endpoint."""
+    logger.debug("Health check endpoint called")
     return {"status": "healthy", "service": "MedLearn AI Assistant is running ok"}
 
 
@@ -77,7 +79,10 @@ def sanitize_filename(filename: str) -> str:
     Returns:
         Sanitized filename safe for filesystem operations
     """
+    logger.debug(f"Sanitizing filename: {filename}")
+    
     if not filename:
+        logger.error("Filename cannot be empty")
         raise ValueError("Filename cannot be empty")
     
     filename = os.path.basename(filename)
@@ -87,7 +92,9 @@ def sanitize_filename(filename: str) -> str:
     if len(filename) > 255:
         name, ext = os.path.splitext(filename)
         filename = name[:250] + ext
+        logger.info(f"Filename truncated to 255 characters: {filename}")
     
+    logger.debug(f"Sanitized filename: {filename}")
     return filename
 
 
@@ -109,97 +116,79 @@ async def upload_document(file: UploadFile = File(...)):
     Returns:
         UploadResponse with message and number of documents indexed
     """
-    file_path = None
-    processor = None
-    
+    logger.info(f"[UPLOAD] Starting document upload: {file.filename}")
+    logger.debug(f"[UPLOAD] Content-Type: {file.content_type}, Size: {file.size if hasattr(file, 'size') else 'unknown'}")
+
+    tmp_path = None
+
     try:
-        if not file.filename:
+        # Validate filename
+        if not file.filename or not file.filename.lower().endswith(".pdf"):
+            logger.warning(f"[UPLOAD] Invalid file type attempted: {file.filename}")
             raise HTTPException(
                 status_code=400,
-                detail="Filename is required"
+                detail="Only PDF files are supported",
             )
-        
-        safe_filename = sanitize_filename(file.filename)
-        file_ext = os.path.splitext(safe_filename)[1].lower()
-        
-        # Validate file extension
-        if file_ext not in ALLOWED_EXTENSIONS:
-            allowed = ', '.join(sorted(ALLOWED_EXTENSIONS))
-            raise HTTPException(
-                status_code=400,
-                detail=f"File type '{file_ext}' not supported. Allowed types: {allowed}"
-            )
-        
-        # Read file content
+
+        # Read uploaded bytes once
         content = await file.read()
-        
-        # Validate file size
-        file_size_kb = len(content) / 1024
-        if len(content) > MAX_FILE_SIZE:
+        file_size = len(content)
+        logger.info(f"[UPLOAD] File read: {file.filename}, Size: {file_size} bytes ({file_size/1024:.2f} KB)")
+
+        # Validate file size (10 MB)
+        if file_size > 10 * 1024 * 1024:
+            logger.warning(
+                f"[UPLOAD] File size exceeds limit: {file.filename} ({file_size} bytes)"
+            )
             raise HTTPException(
                 status_code=400,
-                detail=f"File size ({file_size_kb:.1f}KB) exceeds maximum allowed size of {MAX_FILE_SIZE_KB}KB"
+                detail="File size exceeds 10MB limit",
             )
-        
-        # Write to temporary file
-        with tempfile.NamedTemporaryFile(
-            mode='wb',
-            suffix=file_ext,
-            delete=False
-        ) as tmp_file:
+
+        # Save uploaded content to a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
             tmp_file.write(content)
-            file_path = tmp_file.name
+            tmp_path = tmp_file.name
+
+        logger.info(f"[UPLOAD] Temporary file created: {tmp_path}")
+        logger.debug(f"[UPLOAD] Beginning document processing for {file.filename}")
+
+        # Process document
         
-        logger.info(f"File uploaded: {safe_filename} ({file_size_kb:.1f}KB)")
-        
-        # Process document with multimodal extraction
-        processor = DocumentProcessor(images_folder=IMAGES_FOLDER)
-        text_nodes, metadata = processor.process_document(file_path, safe_filename)
-        
-        if not text_nodes:
-            raise HTTPException(
-                status_code=400,
-                detail="Could not extract content from document"
-            )
-        
-        logger.info(f"Extracted {len(text_nodes)} text node(s), "
-                   f"{metadata.get('extracted_images', 0)} image(s), "
-                   f"{metadata.get('total_tables', 0)} table(s) from {safe_filename}")
-        
-        # Add documents to index
-        result = add_documents_to_index(text_nodes)
-        
-        return UploadResponse(
-            message=result["message"],
-            documents_indexed=len(text_nodes)
+        result = process_document(
+            tmp_path,
+            original_filename=file.filename,
         )
-        
+
+        logger.info(
+            f"[UPLOAD] Document processed successfully: {result.get('document_indexed', 0)} document(s) indexed from {file.filename}"
+        )
+        logger.debug(f"[UPLOAD] Processing result: {result}")
+
+        return UploadResponse(
+            message=result.get("message", "Document processed successfully"),
+            documents_indexed=result.get("document_indexed", 0),
+        )
+
     except HTTPException:
         raise
-    except ValueError as e:
-        logger.error(f"Validation error: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid file or request: {str(e)}"
-        )
-    except ImportError as e:
-        logger.error(f"Missing dependency: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Document processing not fully configured: {str(e)}"
-        )
+
     except Exception as e:
-        logger.error(f"Error uploading document: {e}", exc_info=True)
+        logger.exception(f"[UPLOAD] Unexpected error while processing upload {file.filename}: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to process document: {str(e)}"
+            detail="Error occurred while processing the document",
         )
+
     finally:
-        if file_path and os.path.exists(file_path):
+        if tmp_path and os.path.exists(tmp_path):
             try:
-                os.remove(file_path)
+                os.unlink(tmp_path)
+                logger.debug(f"[UPLOAD] Cleaned up temporary file: {tmp_path}")
             except Exception as e:
-                logger.warning(f"Failed to clean up temporary file {file_path}: {e}")
+                logger.warning(
+                    f"[UPLOAD] Failed to delete temporary file: {tmp_path}, error: {e}"
+                )
 
 
 @router.post("/query", response_model=QueryResponse)
