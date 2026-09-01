@@ -4,7 +4,16 @@ import logging
 from dataclasses import dataclass
 from typing import List, Optional
 from guardrails import Guard
-from guardrails.hub import DetectPII
+
+# Try to import DetectPII, but make it optional
+try:
+    from guardrails.hub import DetectPII
+    DETECT_PII_AVAILABLE = True
+except (ImportError, AttributeError):
+    logger = logging.getLogger(__name__)
+    logger.warning("DetectPII not available in this version of guardrails-ai")
+    DETECT_PII_AVAILABLE = False
+    DetectPII = None
 
 import time
 
@@ -47,11 +56,14 @@ class GuardrailsValidator:
         
         # TODO: Try to import and initialize Guardrails Hub DetectPII validator
         # Hint: Import Guard from guardrails and DetectPII from guardrails.hub. Create a Guard instance using Guard().use(DetectPII(pii_entities=["EMAIL_ADDRESS", "PHONE_NUMBER", "US_SSN", "CREDIT_CARD", "US_PASSPORT", "US_DRIVER_LICENSE", "PERSON", "LOCATION", "DATE_TIME"], on_fail="fix")) to detect various PII entity types with automatic redaction enabled. Store the configured guard in self._pii_guard.
-        try:
-            self._pii_guard = Guard().use(DetectPII(pii_entities=["EMAIL_ADDRESS", "PHONE_NUMBER", "US_SSN", "CREDIT_CARD", "US_PASSPORT", "US_DRIVER_LICENSE", "PERSON", "LOCATION", "DATE_TIME"], on_fail="fix"))
-        except Exception as e:
-            logger.warning("Failed to initialize PII guard: %s", e)
-            self._pii_guard = None
+        if DETECT_PII_AVAILABLE and DetectPII is not None:
+            try:
+                self._pii_guard = Guard().use(DetectPII(pii_entities=["EMAIL_ADDRESS", "PHONE_NUMBER", "US_SSN", "CREDIT_CARD", "US_PASSPORT", "US_DRIVER_LICENSE", "PERSON", "LOCATION", "DATE_TIME"], on_fail="fix"))
+            except Exception as e:
+                logger.warning("Failed to initialize PII guard: %s", e)
+                self._pii_guard = None
+        else:
+            logger.info("DetectPII not available - PII detection disabled")
 
     def decide_input(self, text: str) -> InputDecision:
         """

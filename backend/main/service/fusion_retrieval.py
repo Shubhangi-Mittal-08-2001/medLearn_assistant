@@ -43,19 +43,25 @@ class FusionRetrievalService:
         self.mode = mode
         self.use_async = use_async
 
+        self.logger.info(
+            "fusion.init start table=%s top_k=%d configured_retrieval=vector+bm25",
+            self.table_name,
+            self.similarity_top_k,
+        )
         t0 = time.perf_counter()
         self._init_retrievers()
         self.logger.info(
-            "fusion.init done ms=%.1f table=%s top_k=%d mode=%s",
+            "fusion.init done ms=%.1f table=%s top_k=%d mode=%s retrieval_type=%s",
             (time.perf_counter() - t0) * 1000,
             self.table_name,
             self.similarity_top_k,
             self.mode,
+            self.retrieval_type,
         )
 
     def _init_retrievers(self) -> None:
         """
-        TODO: Initialize the fusion retrieval system
+        Initialize the fusion retrieval system
         
         Steps to implement:
         1. Create a StorageContext from the vector store
@@ -66,26 +72,30 @@ class FusionRetrievalService:
         6. Create a QueryFusionRetriever combining vector and BM25 retrievers
         7. Create a RetrieverQueryEngine from the fusion retriever
         """
-        # TODO: Create a StorageContext from the vector store
+        self.logger.info("fusion.retrievers initializing vector retriever table=%s", self.table_name)
+        # Create a StorageContext from the vector store
         # Hint: A StorageContext is LlamaIndex's way of managing where data is stored. Use StorageContext.from_defaults(vector_store=self.vector_store) to create one. This context will be used to access the stored embeddings and documents.
         storage_context = StorageContext.from_defaults(vector_store=self.vector_store)
         
-        # TODO: Create a VectorStoreIndex from the vector store and storage context
+        # Create a VectorStoreIndex from the vector store and storage context
         # Hint: A VectorStoreIndex is an index structure that allows you to query the vector store efficiently. Use VectorStoreIndex.from_vector_store(vector_store=self.vector_store, storage_context=storage_context) to create it from the existing vector store. This index will enable semantic search capabilities. Save it as self.index.
         self.index = VectorStoreIndex.from_vector_store(vector_store=self.vector_store, storage_context=storage_context)
-        # TODO: Create a vector retriever from the index
+        # Create a vector retriever from the index
         # Hint: A retriever is a component that finds relevant documents based on a query. Use self.index.as_retriever(similarity_top_k=self.similarity_top_k) to convert the index into a retriever that will return the top k most similar documents. This retriever uses vector similarity search (semantic search). Save it as self.vector_retriever.
         self.vector_retriever = self.index.as_retriever(similarity_top_k=self.similarity_top_k)
 
-        # TODO: Load all nodes from the vector store for BM25 retriever
+        # Load all nodes from the vector store for BM25 retriever
         # Hint: BM25 is a keyword-based retrieval algorithm that complements vector search. Import MetadataFilters from llama_index.core.vector_stores, then use self.vector_store.get_nodes(filters=MetadataFilters(filters=[])) to retrieve all nodes with empty filters. Wrap this in a try/except block because the vector store might be empty or there might be connection issues - if it fails, you'll just use vector search alone. Store the result in a variable like all_nodes.
         try:
             all_nodes = self.vector_store.get_nodes(filters=MetadataFilters(filters=[]))
+            self.logger.info("fusion.retrievers loaded_bm25_nodes count=%d", len(all_nodes))
         except Exception as e:
-            self.logger.error("Error occurred while loading nodes for BM25 retriever: %s", e)
+            self.logger.warning(
+                "fusion.retrievers bm25_unavailable; falling_back_to=vector error=%s", e
+            )
             all_nodes = []
 
-        # TODO: Create BM25 retriever if nodes are available
+        # Create BM25 retriever if nodes are available
         # Hint: BM25 retriever works on keyword matching and is great for exact term searches. Start with a list containing only the vector retriever: retrievers = [self.vector_retriever]. If nodes were successfully loaded, use BM25Retriever.from_defaults(nodes=all_nodes, similarity_top_k=min(self.similarity_top_k, max(1, len(all_nodes)))) to create a BM25 retriever. Add it to the retrievers list and save it as self.bm25_retriever. If no nodes were loaded, set self.bm25_retriever = None - you'll only use vector search in that case.
         retrievers = [self.vector_retriever]
         if all_nodes:
@@ -94,11 +104,20 @@ class FusionRetrievalService:
                 similarity_top_k=min(self.similarity_top_k, max(1, len(all_nodes))),
             )
             retrievers = [self.vector_retriever, self.bm25_retriever]
+            self.retrieval_type = "hybrid(vector+bm25)"
         else:
             self.bm25_retriever = None
             retrievers = [self.vector_retriever]
+            self.retrieval_type = "vector"
 
-        # TODO: Create a QueryFusionRetriever combining the retrievers
+        self.logger.info(
+            "fusion.retrievers configured retrieval_type=%s vector_enabled=%s bm25_enabled=%s",
+            self.retrieval_type,
+            self.vector_retriever is not None,
+            self.bm25_retriever is not None,
+        )
+
+        # Create a QueryFusionRetriever combining the retrievers
         # Hint: Fusion retrieval combines results from multiple retrieval methods (like vector search and BM25) to get better results. The QueryFusionRetriever uses Reciprocal Rank Fusion (RRF) to merge results from different retrievers. Use QueryFusionRetriever(retrievers=retrievers, similarity_top_k=self.similarity_top_k, num_queries=self.num_queries, mode=self.mode, use_async=self.use_async) to create it. Save it as self.fusion_retriever.
         self.fusion_retriever = QueryFusionRetriever(
             retrievers=retrievers,
@@ -107,29 +126,44 @@ class FusionRetrievalService:
             mode=self.mode,
             use_async=self.use_async,
         )
-        # TODO: Create a RetrieverQueryEngine from the fusion retriever
+        # Create a RetrieverQueryEngine from the fusion retriever
         # Hint: A QueryEngine not only retrieves documents but also generates answers using an LLM. Use RetrieverQueryEngine.from_args(retriever=self.fusion_retriever) to create one using the fusion retriever you just built, and save it as self.query_engine. This is what you'll use to get full answers, not just document chunks.
         self.query_engine = RetrieverQueryEngine.from_args(retriever=self.fusion_retriever)
         
     def query(self, query_text: str) -> str:
         """
-        TODO: Query the fusion retrieval system and return the answer
+        Query the fusion retrieval system and return the answer
         
         Steps to implement:
         1. Call the query_engine.query() method with the query text
         2. Convert the result to a string
         3. Return the string result
         """
-        # TODO: Query the query engine with the query text
+        self.logger.info(
+            "fusion.query start retrieval_type=%s retriever=%s query_chars=%d",
+            self.retrieval_type,
+            type(self.fusion_retriever).__name__,
+            len(query_text),
+        )
+        t0 = time.perf_counter()
+
+        # Query the query engine with the query text
         # Hint: The query engine will use the fusion retriever to find relevant documents, then use an LLM to generate an answer based on those documents. Call self.query_engine.query(query_text) to get the response object that contains the generated answer.
         response = self.query_engine.query(query_text)
-        # TODO: Convert the result to a string and return it
+        # Convert the result to a string and return it
         # Hint: The query engine returns a response object, but we need just the text answer. Use str() to convert the query result to a string representation before returning it.
-        return str(response)
+        answer = str(response)
+        self.logger.info(
+            "fusion.query done retrieval_type=%s ms=%.1f answer_chars=%d",
+            self.retrieval_type,
+            (time.perf_counter() - t0) * 1000,
+            len(answer),
+        )
+        return answer
 
     def retrieve(self, query_text: str) -> List[RetrievedChunk]:
         """
-        TODO: Retrieve relevant chunks using the fusion retriever
+        Retrieve relevant chunks using the fusion retriever
         
         Steps to implement:
         1. Call the fusion_retriever.retrieve() method with the query text
@@ -142,9 +176,17 @@ class FusionRetrievalService:
         - n.score: the relevance score (may not exist, use getattr with None default)
         - n.node.metadata: dictionary containing metadata like "filename" or "source_path"
         """
-        # TODO: Retrieve nodes using the fusion retriever
+        self.logger.info(
+            "fusion.retrieve start retrieval_type=%s retriever=%s query_chars=%d",
+            self.retrieval_type,
+            type(self.fusion_retriever).__name__,
+            len(query_text),
+        )
+        t0 = time.perf_counter()
+
+        # Retrieve nodes using the fusion retriever
         # Hint: Unlike the query method which generates answers, this method just retrieves the relevant document chunks. Use self.fusion_retriever.retrieve(query_text) to get nodes (document chunks) that are relevant to the given query text. The fusion retriever will combine results from vector search and BM25 search to return the most relevant chunks.
-        # TODO: Transform each node into a RetrievedChunk object
+        # Transform each node into a RetrievedChunk object
         # Hint: The retrieved nodes are LlamaIndex node objects that contain text, scores, and metadata. Create an empty list: out: List[RetrievedChunk] = []. Iterate through each retrieved node. For each node: extract the text content using n.text, get the relevance score using getattr(n, "score", None) (which may not exist on all nodes), and extract the source file information from n.node.metadata dictionary (check for "filename" first using .get("filename"), then "source_path" as fallback). Wrap the metadata extraction in try/except to handle cases where metadata might be missing. Create RetrievedChunk(text=n.text, score=score, source=src) and append it to your list.
                
         document_chunks = self.fusion_retriever.retrieve(query_text)
@@ -162,6 +204,117 @@ class FusionRetrievalService:
             retrieved_chunk = RetrievedChunk(text=text, score=score, source=source)
             retrieved_chunks.append(retrieved_chunk)
         
-        # TODO: Return the list of RetrievedChunk objects
+        # Return the list of RetrievedChunk objects
         # Hint: Return the list of RetrievedChunk objects you've created. This gives the caller access to the retrieved document chunks with their scores and source information, which is useful for showing citations or debugging.
+        self.logger.info(
+            "fusion.retrieve done retrieval_type=%s results=%d ms=%.1f",
+            self.retrieval_type,
+            len(retrieved_chunks),
+            (time.perf_counter() - t0) * 1000,
+        )
         return retrieved_chunks
+    
+    def query_with_routing(self, query_text: str, recommended_retrievers: list) -> str:
+        """
+        Query using selective retrievers based on routing decision.
+        
+        Args:
+            query_text: The query to process
+            recommended_retrievers: List of retriever names to use (e.g., ["vector"], ["bm25"], ["vector", "bm25"])
+            
+        Returns:
+            The generated answer
+        """
+        retriever = self._build_routed_retriever(recommended_retrievers)
+        query_engine = RetrieverQueryEngine.from_args(retriever=retriever)
+        
+        self.logger.info(
+            "fusion.query_with_routing start recommended_retrievers=%s query_chars=%d",
+            "|".join(recommended_retrievers),
+            len(query_text),
+        )
+        t0 = time.perf_counter()
+        
+        response = query_engine.query(query_text)
+        answer = str(response)
+        
+        self.logger.info(
+            "fusion.query_with_routing done recommended_retrievers=%s ms=%.1f answer_chars=%d",
+            "|".join(recommended_retrievers),
+            (time.perf_counter() - t0) * 1000,
+            len(answer),
+        )
+        return answer
+    
+    def retrieve_with_routing(self, query_text: str, recommended_retrievers: list) -> List[RetrievedChunk]:
+        """
+        Retrieve chunks using selective retrievers based on routing decision.
+        
+        Args:
+            query_text: The query to process
+            recommended_retrievers: List of retriever names to use (e.g., ["vector"], ["bm25"], ["vector", "bm25"])
+            
+        Returns:
+            List of RetrievedChunk objects
+        """
+        retriever = self._build_routed_retriever(recommended_retrievers)
+        
+        self.logger.info(
+            "fusion.retrieve_with_routing start recommended_retrievers=%s query_chars=%d",
+            "|".join(recommended_retrievers),
+            len(query_text),
+        )
+        t0 = time.perf_counter()
+        
+        document_chunks = retriever.retrieve(query_text)
+        retrieved_chunks: List[RetrievedChunk] = []
+        for n in document_chunks:
+            text = n.text
+            score = getattr(n, "score", None)
+            try:
+                metadata = getattr(n.node, "metadata", {})
+                source = metadata.get("filename") or metadata.get("source_path")
+            except Exception as e:
+                self.logger.warning("Error extracting metadata from node: %s", e)
+                source = None
+            retrieved_chunk = RetrievedChunk(text=text, score=score, source=source)
+            retrieved_chunks.append(retrieved_chunk)
+        
+        self.logger.info(
+            "fusion.retrieve_with_routing done recommended_retrievers=%s results=%d ms=%.1f",
+            "|".join(recommended_retrievers),
+            len(retrieved_chunks),
+            (time.perf_counter() - t0) * 1000,
+        )
+        return retrieved_chunks
+    
+    def _build_routed_retriever(self, recommended_retrievers: list):
+        """
+        Build a retriever based on the recommended retriever list.
+        
+        Args:
+            recommended_retrievers: List of retriever names ["vector"], ["bm25"], or ["vector", "bm25"]
+            
+        Returns:
+            A retriever instance (single or fusion)
+        """
+        if not recommended_retrievers:
+            recommended_retrievers = ["vector", "bm25"]
+        
+        # If only vector search is recommended
+        if recommended_retrievers == ["vector"]:
+            self.logger.debug("fusion.routing using vector_only retriever")
+            return self.vector_retriever
+        
+        # If only BM25 is recommended
+        elif recommended_retrievers == ["bm25"]:
+            if self.bm25_retriever is None:
+                self.logger.debug("fusion.routing bm25_not_available falling_back_to vector")
+                return self.vector_retriever
+            self.logger.debug("fusion.routing using bm25_only retriever")
+            return self.bm25_retriever
+        
+        # If both are recommended (default fusion)
+        else:
+            self.logger.debug("fusion.routing using fusion_retriever combining_vector_and_bm25")
+            return self.fusion_retriever

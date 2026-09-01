@@ -7,11 +7,18 @@ import os
 import re
 import logging
 import tempfile
+from dotenv import load_dotenv
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
 
-from llama_index.core import SimpleDirectoryReader
-from main.service.rag_service import get_query_engine, add_documents_to_index
+from main.service.rag_service import (
+    add_documents_to_index,
+    create_vector_store,
+    get_index,
+    process_document,
+)
+from main.service.fusion_retrieval import FusionRetrievalService
+from main.service.query_router import QueryRouter, QueryAnalysis
 from main.evaluation.dataset import get_langfuse_client
 from main.evaluation.dataset_evaluation import (
     evaluate_faithfulness_score,
@@ -28,21 +35,44 @@ import secrets
 import datetime
 
 from main.schema.models import QueryRequest,QueryResponse,UploadResponse
+from main.logs.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
+
+# Load environment variables
+load_dotenv()
 
 router = APIRouter()
 
-MAX_FILE_SIZE = 10 * 1024 * 1024
+# Configuration from environment
+MAX_FILE_SIZE_KB = int(os.getenv('MAX_UPLOAD_SIZE_KB', '200'))  # 200 KB default
+MAX_FILE_SIZE = MAX_FILE_SIZE_KB * 1024
+ALLOWED_EXTENSIONS = set(os.getenv('ALLOWED_FILE_TYPES', '.pdf,.docx,.doc,.txt,.xlsx').split(','))
+
+# Images folder should be in backend directory (one level up from main/)
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+IMAGES_FOLDER = os.path.join(BACKEND_DIR, os.getenv('IMAGES_FOLDER', 'stored_images'))
+
 MAX_QUERY_LENGTH = 2000
 MIN_SIMILARITY_TOP_K = 1
-MAX_SIMILARITY_TOP_K = 20
-ALLOWED_EXTENSIONS = {'.txt', '.pdf', '.md'}
+MAX_SIMILARITY_TOP_K = 4
+
+# Agent service will be set by app.py
+_agent_service = None
+
+
+def set_agent_service(agent_service):
+    """Set the agent service instance for use in routes."""
+    global _agent_service
+    _agent_service = agent_service
+    logger.info(f"Agent service initialized in routes. Service: {type(agent_service).__name__}")
+    logger.debug(f"Agent initialized: {_agent_service.is_initialized() if hasattr(_agent_service, 'is_initialized') else 'unknown'}")
 
 
 @router.get("/health")
 async def health_check():
     """Health check endpoint."""
+    logger.debug("Health check endpoint called")
     return {"status": "healthy", "service": "MedLearn AI Assistant is running ok"}
 
 
@@ -56,7 +86,10 @@ def sanitize_filename(filename: str) -> str:
     Returns:
         Sanitized filename safe for filesystem operations
     """
+    logger.debug(f"Sanitizing filename: {filename}")
+    
     if not filename:
+        logger.error("Filename cannot be empty")
         raise ValueError("Filename cannot be empty")
     
     filename = os.path.basename(filename)
@@ -66,87 +99,103 @@ def sanitize_filename(filename: str) -> str:
     if len(filename) > 255:
         name, ext = os.path.splitext(filename)
         filename = name[:250] + ext
+        logger.info(f"Filename truncated to 255 characters: {filename}")
     
+    logger.debug(f"Sanitized filename: {filename}")
     return filename
 
 
 @router.post("/upload", response_model=UploadResponse)
 async def upload_document(file: UploadFile = File(...)):
     """
-    Upload a document file for indexing.
+    Upload a medical document for indexing with multimodal content extraction.
     
-    Accepts: .txt, .pdf, .md files (max 10MB)
+    Accepts: .pdf, .docx, .doc, .txt, .xlsx (configurable in .env)
+    Max size: 200 KB (configurable in .env as MAX_UPLOAD_SIZE_KB)
+    
+    Extracts and processes:
+    - Text content
+    - Images (saved to backend/stored_images folder)
+    - Tables
+    
+    All extracted content is indexed in pgvector with metadata.
     
     Returns:
         UploadResponse with message and number of documents indexed
     """
-    file_path = None
+    logger.info(f"[UPLOAD] Starting document upload: {file.filename}")
+    logger.debug(f"[UPLOAD] Content-Type: {file.content_type}, Size: {file.size if hasattr(file, 'size') else 'unknown'}")
+
+    tmp_path = None
+
     try:
-        if not file.filename:
+        # Validate filename
+        if not file.filename or not file.filename.lower().endswith(".pdf"):
+            logger.warning(f"[UPLOAD] Invalid file type attempted: {file.filename}")
             raise HTTPException(
                 status_code=400,
-                detail="Filename is required"
+                detail="Only PDF files are supported",
             )
-        
-        safe_filename = sanitize_filename(file.filename)
-        file_ext = os.path.splitext(safe_filename)[1].lower()
-        
-        if file_ext not in ALLOWED_EXTENSIONS:
-            raise HTTPException(
-                status_code=400,
-                detail=f"File type not supported. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
-            )
-        
+
+        # Read uploaded bytes once
         content = await file.read()
-        
-        if len(content) > MAX_FILE_SIZE:
+        file_size = len(content)
+        logger.info(f"[UPLOAD] File read: {file.filename}, Size: {file_size} bytes ({file_size/1024:.2f} KB)")
+
+        # Validate file size (10 MB)
+        if file_size > 10 * 1024 * 1024:
+            logger.warning(
+                f"[UPLOAD] File size exceeds limit: {file.filename} ({file_size} bytes)"
+            )
             raise HTTPException(
                 status_code=400,
-                detail=f"File size exceeds maximum allowed size of {MAX_FILE_SIZE / (1024*1024):.1f}MB"
+                detail="File size exceeds 10MB limit",
             )
-        
-        with tempfile.NamedTemporaryFile(
-            mode='wb',
-            suffix=file_ext,
-            delete=False
-        ) as tmp_file:
+
+        # Save uploaded content to a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
             tmp_file.write(content)
-            file_path = tmp_file.name
+            tmp_path = tmp_file.name
+
+        logger.info(f"[UPLOAD] Temporary file created: {tmp_path}")
+        logger.debug(f"[UPLOAD] Beginning document processing for {file.filename}")
+
+        # Process document
         
-        logger.info(f"File uploaded: {safe_filename} ({len(content)} bytes)")
-        
-        reader = SimpleDirectoryReader(input_files=[file_path])
-        documents = reader.load_data()
-        
-        logger.info(f"Loaded {len(documents)} document(s) from {safe_filename}")
-        
-        result = add_documents_to_index(documents)
-        
-        return UploadResponse(
-            message=result["message"],
-            documents_indexed=len(documents)
+        result = process_document(
+            tmp_path,
+            original_filename=file.filename,
         )
-        
+
+        logger.info(
+            f"[UPLOAD] Document processed successfully: {result.get('document_indexed', 0)} document(s) indexed from {file.filename}"
+        )
+        logger.debug(f"[UPLOAD] Processing result: {result}")
+
+        return UploadResponse(
+            message=result.get("message", "Document processed successfully"),
+            documents_indexed=result.get("document_indexed", 0),
+        )
+
     except HTTPException:
         raise
-    except ValueError as e:
-        logger.error(f"Validation error: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid file or request"
-        )
+
     except Exception as e:
-        logger.error(f"Error uploading document: {e}", exc_info=True)
+        logger.exception(f"[UPLOAD] Unexpected error while processing upload {file.filename}: {e}")
         raise HTTPException(
             status_code=500,
-            detail="Failed to process document"
+            detail="Error occurred while processing the document",
         )
+
     finally:
-        if file_path and os.path.exists(file_path):
+        if tmp_path and os.path.exists(tmp_path):
             try:
-                os.remove(file_path)
+                os.unlink(tmp_path)
+                logger.debug(f"[UPLOAD] Cleaned up temporary file: {tmp_path}")
             except Exception as e:
-                logger.warning(f"Failed to clean up temporary file {file_path}: {e}")
+                logger.warning(
+                    f"[UPLOAD] Failed to delete temporary file: {tmp_path}, error: {e}"
+                )
 
 
 @router.post("/query", response_model=QueryResponse)
@@ -177,23 +226,35 @@ async def query_rag(request: QueryRequest, background_tasks: BackgroundTasks):
         conversation_flow = []
 
      # ----------------------------------------------------
-        # 1. RAG Query
+        # 1. Query Routing + RAG Query
         # ----------------------------------------------------
-        query_engine = get_query_engine(similarity_top_k=MAX_SIMILARITY_TOP_K)
-        response = query_engine.query(request.question)
-        answer = str(response)
+        # Analyze the query to determine optimal retriever strategy
+        query_analysis: QueryAnalysis = QueryRouter.analyze(request.question)
+        QueryRouter.log_routing_decision(request.question, query_analysis)
+        
+        # Ensure the shared LLM and embedding settings are initialized before
+        # constructing the fusion query engine.
+        get_index()
+        fusion_service = FusionRetrievalService(
+            vector_store=create_vector_store(),
+            table_name=os.getenv("DB_TABLE_NAME", "medical_documents_embeddings"),
+            similarity_top_k=MAX_SIMILARITY_TOP_K,
+        )
+        
+        # Use routed retriever based on query analysis
+        answer = fusion_service.query_with_routing(request.question, query_analysis.recommended_retrievers)
 
-        # Build full retrieved chunks 
-        full_chunks = []
-        if hasattr(response, "source_nodes"):
-            for node in response.source_nodes:
-                full_chunks.append({
-                    "chunk_id": node.node_id,
-                    "text": node.text,
-                    "source": node.metadata.get("file_path"),
-                    "score": float(node.score),
-                    "metadata": node.metadata
-                })
+        # Retrieve the same routed chunks for evaluation and handoff context.
+        full_chunks = [
+            {
+                "chunk_id": None,
+                "text": chunk.text,
+                "source": chunk.source,
+                "score": float(chunk.score) if chunk.score is not None else None,
+                "metadata": {},
+            }
+            for chunk in fusion_service.retrieve_with_routing(request.question, query_analysis.recommended_retrievers)
+        ]
 
         eval_context = "\n\n".join([c["text"] for c in full_chunks])
 # ----------------------------------------------------
@@ -202,6 +263,15 @@ async def query_rag(request: QueryRequest, background_tasks: BackgroundTasks):
         langfuse = get_langfuse_client()
         span = langfuse.start_span(name="api_rag_query_handoff", input={"question": request.question})
         trace_id = span.trace_id
+
+        # Log routing decision to trace
+        span.update(
+            metadata={
+                "query_type": query_analysis.query_type.value,
+                "routing_confidence": query_analysis.confidence,
+                "retrievers_used": "|".join(query_analysis.recommended_retrievers),
+            }
+        )
 
         # ----------------------------------------------------
         # 3. Evaluation
