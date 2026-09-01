@@ -76,7 +76,11 @@ class HybridQueryResult:
 
 
 class TrackingQueryEngine:
-    """Records every QueryEngineTool call without changing LlamaIndex behaviour."""
+    """Records every QueryEngineTool call without changing LlamaIndex behaviour.
+
+    QueryEngineTool.acall uses ``aquery``, not ``query``. A wrapper that only
+    implements ``query`` makes every async document search look like a hard failure.
+    """
 
     def __init__(self, name: str, query_engine: Any, events: list[ToolExecution]):
         self.name, self.query_engine, self.events = name, query_engine, events
@@ -84,6 +88,18 @@ class TrackingQueryEngine:
     def query(self, query: str) -> Any:
         try:
             response = self.query_engine.query(query)
+            self.events.append(ToolExecution(self.name, "success"))
+            return response
+        except Exception as exc:
+            self.events.append(ToolExecution(self.name, "error", str(exc)))
+            raise
+
+    async def aquery(self, query: str) -> Any:
+        try:
+            if hasattr(self.query_engine, "aquery"):
+                response = await self.query_engine.aquery(query)
+            else:
+                response = await asyncio.to_thread(self.query_engine.query, query)
             self.events.append(ToolExecution(self.name, "success"))
             return response
         except Exception as exc:
@@ -154,12 +170,19 @@ def _fusion_service() -> FusionRetrievalService:
 class HybridQueryService:
     """Builds an OpenAI-compatible agent and executes hybrid medical queries."""
 
-    SYSTEM_PROMPT = """You are MedLearn, a medical education assistant.
-Use clinical_sql for structured database facts. Use semantic_search for conceptual
-document questions, bm25_search for exact terms, and hybrid_document_search when both
-forms of document evidence are needed. For a question requiring clinical facts and an
-explanation, call both SQL and a document tool. Hugging Face MCP tools are only for a
-specific model-search or inference request. State uncertainty and never expose PII."""
+    SYSTEM_PROMPT = """You are MedLearn, a medical education assistant for indexed
+course materials and a clinical SQL database.
+You MUST call a tool before answering. For lecture notes, citations, authors,
+footnotes, anatomy, and somatosensory content, call bm25_search or
+hybrid_document_search first (use semantic_search for conceptual explanations).
+Use clinical_sql only for structured table facts (drug interactions, lab ranges,
+densities stored in SQL). Hugging Face MCP tools are only for a model-search or
+inference request. Never claim document search is unavailable unless a tool
+returned an error. Never answer from general web knowledge when a document tool
+is available. State uncertainty if retrieved context is insufficient and never
+expose PII."""
+
+    DATA_TOOLS = {"clinical_sql", "semantic_search", "bm25_search", "hybrid_document_search"}
 
     def __init__(self) -> None:
         self.agent: Any = None
@@ -191,15 +214,24 @@ specific model-search or inference request. State uncertainty and never expose P
         self._initialized = True
 
     def _create_openai_agent(self, tools: list[Any]) -> Any:
-        """Prefer OpenAIAgent; Azure OpenAI is OpenAI-compatible. Fall back to ReAct."""
+        """Prefer FunctionAgent (native Azure tool calling). Fall back to ReAct."""
         llm = create_llm()
+        agent_kwargs = {
+            "tools": tools,
+            "llm": llm,
+            "system_prompt": self.SYSTEM_PROMPT,
+            "verbose": True,
+            "streaming": False,
+            "timeout": 120.0,
+        }
         try:
-            from llama_index.agent.openai import OpenAIAgent
-            return OpenAIAgent.from_tools(tools, llm=llm, verbose=True, system_prompt=self.SYSTEM_PROMPT)
-        except ImportError:
+            from llama_index.core.agent.workflow import FunctionAgent
+            logger.info("Creating FunctionAgent with native tool calling")
+            return FunctionAgent(**agent_kwargs)
+        except Exception as exc:
             from llama_index.core.agent.workflow import ReActAgent
-            logger.info("OpenAIAgent package unavailable; using the OpenAI-compatible ReAct workflow")
-            return ReActAgent(tools=tools, llm=llm, system_prompt=self.SYSTEM_PROMPT)
+            logger.info("FunctionAgent unavailable (%s); using ReActAgent", exc)
+            return ReActAgent(**agent_kwargs)
 
     async def execute(self, question: str) -> HybridQueryResult:
         await self.initialize()
@@ -208,8 +240,14 @@ specific model-search or inference request. State uncertainty and never expose P
         self.events[:] = self.initialization_errors
         if self.agent is not None:
             try:
-                response = self.agent.chat(question) if hasattr(self.agent, "chat") else await self.agent.run(question)
-                return self._result(question, str(response), "agent")
+                # Workflow.run() takes StartEvent kwargs. A positional string is
+                # treated as ctx (or dropped), so the model never sees the question.
+                response = await self.agent.run(user_msg=question)
+                result = self._result(question, str(response), "agent")
+                if not any(event.name in self.DATA_TOOLS and event.status == "success" for event in self.events):
+                    logger.warning("Agent returned without using data tools; running retrieval fallback")
+                    return await self._fallback(question)
+                return result
             except Exception as exc:
                 logger.warning("Agent execution failed; attempting deterministic fallback: %s", exc)
                 self.events.append(ToolExecution("agent", "error", str(exc)))

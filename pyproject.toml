@@ -21,47 +21,68 @@ dependencies = [
     "requests==2.32.5",
     "huggingface-hub>=0.20.0",
 
+    # ============================================================
     # LlamaIndex
-    #
-    # Keep the LlamaIndex stack on Core 0.13.x.
-    #
-    "llama-index-core>=0.13.0,<0.14",
+    # ============================================================
+
+    # Core 0.14 generation
+    "llama-index-core>=0.14.3,<0.15",
 
     # Azure OpenAI
-    "llama-index-llms-azure-openai==0.4.1",
+    "llama-index-llms-azure-openai==0.4.2",
     "llama-index-embeddings-azure-openai==0.4.1",
+
+    # Multimodal Azure OpenAI
     "llama-index-multi-modal-llms-azure-openai==0.5.1",
 
     # Database / vector store
     "llama-index-readers-database==0.5.1",
-    "llama-index-vector-stores-postgres==0.6.1",
+    "llama-index-vector-stores-postgres==0.7.1",
 
     # MCP
-    "llama-index-tools-mcp==0.4.8",
+    "llama-index-tools-mcp",
     "mcp>=1.24.0,<2",
 
+    # ============================================================
     # LangChain / Langfuse
+    # ============================================================
+
     "langchain-postgres==0.0.16",
     "langfuse==3.9.1",
 
+    # ============================================================
     # Database
+    # ============================================================
+
     "sqlalchemy>=2.0.45",
     "psycopg2-binary==2.9.11",
 
+    # ============================================================
     # Document processing
+    # ============================================================
+
     "pypdf==6.2.0",
     "pymupdf==1.24.0",
     "beautifulsoup4==4.14.2",
 
+    # ============================================================
     # Utilities
+    # ============================================================
+
     "reportlab>=4.0.0",
     "matplotlib>=3.7.0",
     "numpy>=1.24.0",
 
+    # ============================================================
     # Retrieval
-    "llama-index-retrievers-bm25==0.7.1",
+    # ============================================================
 
+    "llama-index-retrievers-bm25>=0.7.1",
+
+    # ============================================================
     # Guardrails / parsing
-    "guardrails-ai>=0.11.0",
+    # ============================================================
+
+    "guardrails-ai==0.11.0",
     "llama-parse==0.6.83",
 ]
