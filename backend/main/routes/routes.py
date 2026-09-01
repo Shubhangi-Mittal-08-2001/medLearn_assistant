@@ -10,6 +10,7 @@ import tempfile
 from dotenv import load_dotenv
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
+import langfuse
 
 from main.service.rag_service import (
     add_documents_to_index,
@@ -425,7 +426,7 @@ async def query_rag(request: QueryRequest, background_tasks: BackgroundTasks):
 
             span.update(output={"handoff": True})
             span.end()
-
+            langfuse.flush()
             return QueryResponse(
                 answer=(
                     "I don't have enough reliable information to answer confidently. "
@@ -863,5 +864,4 @@ async def root():
             "hybrid": "Compare the adaptation speeds and receptive field sizes of Pacinian vs Meissner corpuscles"
         }
     }
-
 

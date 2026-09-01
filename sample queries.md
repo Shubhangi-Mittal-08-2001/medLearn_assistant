@@ -46,7 +46,7 @@ Target Text Context: Explains how primary muscle-spindle afferents track "Length
 **BM25  Queries**
 
 **Query 1**
-What is the precise innervation density of Merkel’s receptors per square millimeter in human digits at the age of 50?
+What is the precise innervation density of Merkel’s receptors per square millimeter in digits at the age of 50?
 
 Location: Page 2, second paragraph.
 

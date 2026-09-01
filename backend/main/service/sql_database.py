@@ -29,10 +29,10 @@ class SQLDatabaseService:
         load_dotenv()
         
         self.db_host = os.getenv("DB_HOST", "localhost")
-        self.db_port = os.getenv("DB_PORT", "5432")
-        self.db_name = os.getenv("DB_NAME", "medlearn")
+        self.db_port = os.getenv("DB_PORT", "9000")
+        self.db_name = os.getenv("DB_NAME", "medlearn_collection")
         self.db_user = os.getenv("DB_USER", "postgres")
-        self.db_password = os.getenv("DB_PASSWORD", "")
+        self.db_password = os.getenv("DB_PASSWORD", "dba")
         
         self.engine = None
         self.metadata = None
