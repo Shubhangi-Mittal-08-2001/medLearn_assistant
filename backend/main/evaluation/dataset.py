@@ -15,7 +15,13 @@ def get_langfuse_client() -> Langfuse:
     """Initialize Langfuse client using env vars."""
     secret_key = os.getenv("LANGFUSE_SECRET_KEY")
     public_key = os.getenv("LANGFUSE_PUBLIC_KEY")
-    host = os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
+    # LANGFUSE_BASE_URL is used by current Langfuse SDK configurations; retain
+    # LANGFUSE_HOST for existing deployments.
+    host = (
+        os.getenv("LANGFUSE_BASE_URL")
+        or os.getenv("LANGFUSE_HOST")
+        or "https://cloud.langfuse.com"
+    )
 
     if not secret_key or not public_key:
         raise RuntimeError(

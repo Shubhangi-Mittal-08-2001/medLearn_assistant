@@ -7,6 +7,7 @@ import os
 import re
 import logging
 import tempfile
+import time
 from dotenv import load_dotenv
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
@@ -34,8 +35,15 @@ from main.handoff.handoff_service import (
 import secrets
 import datetime
 
-from main.schema.models import QueryRequest,QueryResponse,UploadResponse
+from main.schema.models import (
+    NodeResponse,
+    QueryRequest,
+    QueryResponse,
+    UploadResponse,
+    ValidationResults,
+)
 from main.logs.logging import get_logger
+from main.service.guardrails import GuardrailsValidator
 
 logger = get_logger(__name__)
 
@@ -59,6 +67,49 @@ MAX_SIMILARITY_TOP_K = 4
 
 # Agent service will be set by app.py
 _agent_service = None
+_guardrails_validator = GuardrailsValidator()
+
+
+def _guarded_response(question: str, answer: str, source_nodes: list[dict], input_decision, **kwargs) -> QueryResponse:
+    """Apply output guardrails and consistently expose their decision to clients."""
+    output = _guardrails_validator.validate_and_sanitize_output(answer)
+    sanitized_source_nodes = []
+    retrieved_nodes = []
+    source_phi_summaries = []
+    for node in source_nodes:
+        sanitized_node = dict(node)
+        node_text = str(node.get("text", node.get("content", "")))
+        node_output = _guardrails_validator.validate_and_sanitize_output(node_text)
+        if "text" in sanitized_node:
+            sanitized_node["text"] = node_output.sanitized_text
+        if "content" in sanitized_node:
+            sanitized_node["content"] = node_output.sanitized_text
+        sanitized_source_nodes.append(sanitized_node)
+        retrieved_nodes.append(NodeResponse(
+            text=node_output.sanitized_text,
+            score=node.get("score"),
+            source=node.get("source"),
+        ))
+        source_phi_summaries.extend(node_output.pii_summaries)
+
+    pii_summaries = list(dict.fromkeys(
+        input_decision.phi_summaries + output.pii_summaries + source_phi_summaries
+    ))
+    return QueryResponse(
+        query=question,
+        answer=output.sanitized_text,
+        retrieved_nodes=retrieved_nodes,
+        source_nodes=sanitized_source_nodes,
+        validation_results=ValidationResults(
+            input_allowed=True,
+            pii_detected=input_decision.phi_detected or output.pii_detected or bool(source_phi_summaries),
+            pii_summaries=pii_summaries,
+            output_sanitized=output.output_sanitized or bool(source_phi_summaries),
+            output_blocked=output.blocked,
+            output_block_reason=output.reason,
+        ),
+        **kwargs,
+    )
 
 
 def set_agent_service(agent_service):
@@ -201,6 +252,49 @@ async def upload_document(file: UploadFile = File(...)):
 @router.post("/query", response_model=QueryResponse)
 async def query_rag(request: QueryRequest, background_tasks: BackgroundTasks):
     """Query RAG system with evaluation and human handoff logic."""
+    start_time = time.perf_counter()
+    input_decision = _guardrails_validator.decide_input(request.question)
+    if not input_decision.allowed:
+        logger.warning("Blocked query input: %s", input_decision.reason)
+        raise HTTPException(status_code=400, detail=input_decision.reason)
+    request.question = input_decision.sanitized_text
+    if not QueryRouter.is_relevant_to_medlearn_documents(request.question):
+        # Do not reject a question simply because the current knowledge base
+        # cannot cover it.  It cannot be answered reliably with the available
+        # sources/tools, so create the same human-review handoff used for
+        # low-confidence and empty-retrieval queries.
+        reference_id = generate_handoff_reference_id()
+        handoff_context = {
+            "reference_id": reference_id,
+            "trace_id": "scope-gate",
+            "timestamp_utc": datetime.datetime.now(datetime.UTC).isoformat(),
+            "session_id": secrets.token_hex(8),
+            "priority": "normal",
+            "trigger_reason": "query is not supported by the available knowledge base and tools",
+            "query_history": [{"role": "user", "message": request.question}],
+            "generated_answer": None,
+            "evaluation_scores": {
+                "faithfulness": None,
+                "relevance": None,
+                "confidence": None,
+            },
+            "retrieved_chunks": [],
+            "user_metadata": {"email": request.user_email},
+            "conversation_flow": [],
+        }
+        background_tasks.add_task(send_handoff_email, handoff_context)
+        logger.info("Escalated unsupported query before retrieval: %s", reference_id)
+        return _guarded_response(
+            request.question,
+            answer=(
+                "Your request cannot be answered with the currently available "
+                "knowledge base and tools, so it has been escalated to a human support team who will review and respond within 24 hours. "
+                f"reviewer. Reference ID: {reference_id}"
+            ),
+            source_nodes=[],
+            input_decision=input_decision,
+            routing="handoff",
+        )
     #Implement query endpoint with handoff logic
     
     # 1. Setup: Generate session_id, initialize conversation_flow
@@ -223,13 +317,127 @@ async def query_rag(request: QueryRequest, background_tasks: BackgroundTasks):
     if _agent_service is not None and hasattr(_agent_service, "execute_query"):
         try:
             result = await _agent_service.execute_query(request.question)
-            return QueryResponse(
+            # The agentic path is the normal /query path.  It used to return here,
+            # bypassing the legacy branch below where the Langfuse span and scores
+            # are created.  Record the complete request before returning so traces
+            # and evaluations appear for agent responses as well.
+            langfuse = None
+            span = None
+            try:
+                langfuse = get_langfuse_client()
+                span = langfuse.start_span(
+                    name="api_query",
+                    input={"question": request.question},
+                    metadata={
+                        "route": result.routing,
+                        "tools_used": result.tools_used,
+                        "tool_errors": result.tool_errors,
+                    },
+                )
+                trace_id = span.trace_id
+                context = "\n\n".join(
+                    str(node.get("text", ""))
+                    for node in result.source_nodes
+                    if node.get("text")
+                )
+
+                faithfulness = await evaluate_faithfulness_score(
+                    langfuse, trace_id, request.question, context, result.answer
+                )
+                relevance = await evaluate_answer_relevance(
+                    langfuse, trace_id, request.question, result.answer
+                )
+
+                # The agent path is the primary /query path.  Apply the same
+                # handoff decision and delivery logic used by legacy retrieval
+                # before returning its response.
+                try:
+                    confidence_handoff = await evaluate_confidence_score(result.answer)
+                except Exception as exc:
+                    logger.warning("Confidence evaluation unavailable: %s", exc)
+                    confidence_handoff = {"trigger": False, "confidence": 50}
+                try:
+                    explicit_handoff = await evaluate_explicit_user_request(request.question)
+                except Exception as exc:
+                    logger.warning("Explicit handoff evaluation unavailable: %s", exc)
+                    explicit_handoff = {"trigger": False, "reason": "evaluation unavailable"}
+
+                full_chunks = list(result.source_nodes)
+                score_based_handoff = evaluate_score(
+                    faithfulness,
+                    relevance,
+                    request.question,
+                    no_chunks=not full_chunks,
+                )
+                if explicit_handoff["trigger"]:
+                    handoff, priority = explicit_handoff, "high"
+                elif confidence_handoff["trigger"] and score_based_handoff["trigger"]:
+                    handoff, priority = confidence_handoff, "high"
+                elif score_based_handoff["trigger"]:
+                    handoff, priority = score_based_handoff, "normal"
+                else:
+                    handoff, priority = {"trigger": False}, None
+
+                if handoff["trigger"]:
+                    reference_id = generate_handoff_reference_id()
+                    handoff_context = {
+                        "reference_id": reference_id,
+                        "trace_id": trace_id,
+                        "timestamp_utc": datetime.datetime.now(datetime.UTC).isoformat(),
+                        "session_id": secrets.token_hex(8),
+                        "priority": priority,
+                        "trigger_reason": handoff["reason"],
+                        "query_history": [{"role": "user", "message": request.question}],
+                        "generated_answer": result.answer,
+                        "evaluation_scores": {
+                            "faithfulness": faithfulness,
+                            "relevance": relevance,
+                            "confidence": confidence_handoff["confidence"],
+                        },
+                        "retrieved_chunks": full_chunks,
+                        "user_metadata": {"email": request.user_email},
+                        "conversation_flow": [],
+                    }
+                    background_tasks.add_task(send_handoff_email, handoff_context)
+                    span.update(output={"handoff": True, "reference_id": reference_id})
+                    result.answer = (
+                        "I don't have enough reliable information to answer confidently. "
+                        "Your request has been escalated to a human reviewer. "
+                        f"Reference ID: {reference_id}"
+                    )
+                    result.source_nodes = []
+                else:
+                    span.update(output={"handoff": False})
+                span.update(output={
+                    "answer": result.answer,
+                    "faithfulness": faithfulness,
+                    "answer_relevance": relevance,
+                })
+            except Exception as observability_exc:
+                # Observability must never turn a successful query into an API error.
+                logger.warning("Unable to record Langfuse observability for /query: %s", observability_exc)
+            finally:
+                if span is not None:
+                    try:
+                        span.end()
+                    except Exception:
+                        logger.warning("Unable to end Langfuse /query span", exc_info=True)
+                if langfuse is not None:
+                    try:
+                        langfuse.flush()
+                    except Exception:
+                        logger.warning("Unable to flush Langfuse /query events", exc_info=True)
+            response = _guarded_response(
+                request.question,
                 answer=result.answer,
-                source_nodes=[],
+                source_nodes=result.source_nodes,
+                input_decision=input_decision,
                 tools_used=result.tools_used,
                 tool_errors=result.tool_errors,
                 routing=result.routing,
             )
+            logger.info("Query completed in %.2f ms", (time.perf_counter() - start_time) * 1000)
+            return response
         except Exception as exc:
             logger.exception("Hybrid agent query failed; using legacy retrieval: %s", exc)
 
@@ -398,14 +606,18 @@ async def query_rag(request: QueryRequest, background_tasks: BackgroundTasks):
             span.update(output={"handoff": True})
             span.end()
 
-            return QueryResponse(
+            response = _guarded_response(
+                request.question,
                 answer=(
                     "I don't have enough reliable information to answer confidently. "
                     "Your request has been escalated to a human reviewer. "
                     f"Reference ID: {reference_id}"
                 ),
                 source_nodes=[],
+                input_decision=input_decision,
             )
+            logger.info("Query completed in %.2f ms", (time.perf_counter() - start_time) * 1000)
+            return response
 
         # ----------------------------------------------------
         # 6. Normal response
@@ -413,14 +625,54 @@ async def query_rag(request: QueryRequest, background_tasks: BackgroundTasks):
         span.update(output={"handoff": False})
         span.end()
 
-        return QueryResponse(answer=answer, source_nodes=full_chunks)
+        response = _guarded_response(
+            request.question,
+            answer=answer,
+            source_nodes=full_chunks,
+            input_decision=input_decision,
+        )
+        logger.info("Query completed in %.2f ms", (time.perf_counter() - start_time) * 1000)
+        return response
 
     except ValueError as e:
         logger.error(f"Validation error: {e}", exc_info=True)
         raise HTTPException(status_code=400, detail="Invalid query request")
     except Exception as e:
-        logger.error(f"Error processing query: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to process query")
+        # A retrieval, tool, or downstream service failure means this request
+        # cannot be processed by the currently available system. Escalate it
+        # rather than leaving the learner with a generic server error.
+        logger.error("Error processing query; escalating to human review: %s", e, exc_info=True)
+        reference_id = generate_handoff_reference_id()
+        handoff_context = {
+            "reference_id": reference_id,
+            "trace_id": "processing-error",
+            "timestamp_utc": datetime.datetime.now(datetime.UTC).isoformat(),
+            "session_id": secrets.token_hex(8),
+            "priority": "high",
+            "trigger_reason": "available knowledge base or tools could not process the query",
+            "query_history": [{"role": "user", "message": request.question}],
+            "generated_answer": None,
+            "evaluation_scores": {
+                "faithfulness": None,
+                "relevance": None,
+                "confidence": None,
+            },
+            "retrieved_chunks": [],
+            "user_metadata": {"email": request.user_email},
+            "conversation_flow": [],
+        }
+        background_tasks.add_task(send_handoff_email, handoff_context)
+        return _guarded_response(
+            request.question,
+            answer=(
+                "Your request could not be processed with the currently available "
+                "knowledge base and tools, so it has been escalated to a human "
+                f"reviewer. Reference ID: {reference_id}"
+            ),
+            source_nodes=[],
+            input_decision=input_decision,
+            routing="handoff",
+        )
 
 
 @router.get("/")

@@ -62,6 +62,7 @@ class ToolExecution:
 class HybridQueryResult:
     question: str
     answer: str
+    source_nodes: list[dict[str, Any]] = field(default_factory=list)
     tools_used: list[str] = field(default_factory=list)
     tool_errors: list[dict[str, str]] = field(default_factory=list)
     routing: str = "agent"
@@ -69,6 +70,7 @@ class HybridQueryResult:
     def to_dict(self) -> dict[str, Any]:
         return {
             "answer": self.answer,
+            "source_nodes": self.source_nodes,
             "tools_used": self.tools_used,
             "tool_errors": self.tool_errors,
             "routing": self.routing,
@@ -82,12 +84,28 @@ class TrackingQueryEngine:
     implements ``query`` makes every async document search look like a hard failure.
     """
 
-    def __init__(self, name: str, query_engine: Any, events: list[ToolExecution]):
+    def __init__(self, name: str, query_engine: Any, events: list[ToolExecution], source_nodes: list[dict[str, Any]] | None = None):
         self.name, self.query_engine, self.events = name, query_engine, events
+        self.source_nodes = source_nodes
+
+    def _record_source_nodes(self, response: Any) -> None:
+        if self.source_nodes is None:
+            return
+        for item in getattr(response, "source_nodes", []) or []:
+            node = getattr(item, "node", item)
+            metadata = dict(getattr(node, "metadata", {}) or {})
+            self.source_nodes.append({
+                "chunk_id": getattr(node, "node_id", None),
+                "text": getattr(node, "text", ""),
+                "source": metadata.get("source") or metadata.get("file_name") or metadata.get("filename"),
+                "score": float(item.score) if getattr(item, "score", None) is not None else None,
+                "metadata": metadata,
+            })
 
     def query(self, query: str) -> Any:
         try:
             response = self.query_engine.query(query)
+            self._record_source_nodes(response)
             self.events.append(ToolExecution(self.name, "success"))
             return response
         except Exception as exc:
@@ -100,6 +118,7 @@ class TrackingQueryEngine:
                 response = await self.query_engine.aquery(query)
             else:
                 response = await asyncio.to_thread(self.query_engine.query, query)
+            self._record_source_nodes(response)
             self.events.append(ToolExecution(self.name, "success"))
             return response
         except Exception as exc:
@@ -136,7 +155,9 @@ def _sql_query_engine() -> NLSQLTableQueryEngine:
         raise ToolUnavailableError(f"Clinical SQL database is unavailable: {exc}") from exc
 
 
-def create_query_engine_tools(events: list[ToolExecution]) -> list[QueryEngineTool]:
+def create_query_engine_tools(
+    events: list[ToolExecution], source_nodes: list[dict[str, Any]] | None = None
+) -> list[QueryEngineTool]:
     """Create SQL, semantic, BM25, and fusion ``QueryEngineTool`` instances."""
     tools: list[QueryEngineTool] = []
     builders: Iterable[tuple[str, str, Any]] = (
@@ -151,7 +172,7 @@ def create_query_engine_tools(events: list[ToolExecution]) -> list[QueryEngineTo
             # BM25/fusion builders return retrievers; SQL/semantic return query engines.
             engine = value if hasattr(value, "query") else RetrieverQueryEngine.from_args(retriever=value)
             tools.append(QueryEngineTool.from_defaults(
-                query_engine=TrackingQueryEngine(name, engine, events), name=name, description=description
+                query_engine=TrackingQueryEngine(name, engine, events, source_nodes), name=name, description=description
             ))
         except Exception as exc:
             events.append(ToolExecution(name, "unavailable", str(exc)))
@@ -188,6 +209,7 @@ expose PII."""
         self.agent: Any = None
         self.tools: list[Any] = []
         self.events: list[ToolExecution] = []
+        self.source_nodes: list[dict[str, Any]] = []
         self.initialization_errors: list[ToolExecution] = []
         self._initialized = False
 
@@ -195,7 +217,7 @@ expose PII."""
         if self._initialized:
             return
         self.events = []
-        self.tools = create_query_engine_tools(self.events)
+        self.tools = create_query_engine_tools(self.events, self.source_nodes)
         try:
             mcp_tools = await HuggingFaceMCPService().load_tools()
             self.tools.extend(mcp_tools)
@@ -238,6 +260,7 @@ expose PII."""
         # TrackingQueryEngine objects retain this list reference, so mutate it in
         # place instead of rebinding it for each request.
         self.events[:] = self.initialization_errors
+        self.source_nodes.clear()
         if self.agent is not None:
             try:
                 # Workflow.run() takes StartEvent kwargs. A positional string is
@@ -274,4 +297,4 @@ expose PII."""
         used = list(dict.fromkeys(event.name for event in self.events if event.status == "success"))
         errors = [{"tool": event.name, "message": event.detail or event.status}
                   for event in self.events if event.status in {"error", "unavailable"}]
-        return HybridQueryResult(question, answer, used, errors, routing)
+        return HybridQueryResult(question, answer, list(self.source_nodes), used, errors, routing)

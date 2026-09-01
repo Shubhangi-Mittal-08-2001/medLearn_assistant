@@ -63,6 +63,28 @@ class QueryRouter:
         r'\b(compare|differentiate|distinguish|map|relate|associate|connect)\b.*\b(based on|with|using)\b',
         r'\b(feedback|interaction|integration|coordination)\b',
     ]
+
+    # The indexed learning material currently covers the somatosensory system.
+    # This intentionally runs before any LLM/agent invocation: unrelated
+    # questions must not be sent to the model merely because they look like a
+    # valid natural-language question.
+    MEDLEARN_TOPIC_PATTERN = re.compile(
+        r"\b(?:somatosensory|sensory|sensation|tactile|touch|skin|"
+        r"receptor|mechanoreceptor|nociceptor|thermoreceptor|proprioception|"
+        r"pain|temperature|vibration|texture|merkel|meissner|pacinian|ruffini|"
+        r"muscle|spindle|intrafusal|extrafusal|afferent|neuron|neural|nervous|"
+        r"joint|tendon|golgi|motor|reflex|limb|grip)\b",
+        re.IGNORECASE,
+    )
+
+    @classmethod
+    def is_relevant_to_medlearn_documents(cls, query_text: str) -> bool:
+        """Return whether a query is within the indexed MedLearn subject area.
+
+        This is a deterministic scope gate, not an LLM classification, so it
+        can safely be used before agent execution.
+        """
+        return bool(cls.MEDLEARN_TOPIC_PATTERN.search(query_text))
     
     @classmethod
     def analyze(cls, query_text: str) -> QueryAnalysis:

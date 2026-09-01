@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, field_validator
-from typing import List, Dict
+from typing import List, Dict, Optional
 MAX_QUERY_LENGTH = 2000
 
 
@@ -25,13 +25,34 @@ class QueryRequest(BaseModel):
         return v
 
 
+class NodeResponse(BaseModel):
+    """Normalized retrieval node returned alongside the legacy source node shape."""
+
+    text: str
+    score: Optional[float] = None
+    source: Optional[str] = None
+
+
+class ValidationResults(BaseModel):
+    input_allowed: bool
+    input_block_reason: Optional[str] = None
+    pii_detected: bool = False
+    pii_summaries: List[str] = Field(default_factory=list)
+    output_sanitized: bool = False
+    output_blocked: bool = False
+    output_block_reason: Optional[str] = None
+
+
 class QueryResponse(BaseModel):
     """Response model for query endpoint."""
     answer: str
-    source_nodes: List[dict] = []
-    tools_used: List[str] = []
-    tool_errors: List[Dict[str, str]] = []
+    query: Optional[str] = None
+    retrieved_nodes: List[NodeResponse] = Field(default_factory=list)
+    source_nodes: List[dict] = Field(default_factory=list)
+    tools_used: List[str] = Field(default_factory=list)
+    tool_errors: List[Dict[str, str]] = Field(default_factory=list)
     routing: str = "agent"
+    validation_results: Optional[ValidationResults] = None
 
 
 class UploadResponse(BaseModel):
