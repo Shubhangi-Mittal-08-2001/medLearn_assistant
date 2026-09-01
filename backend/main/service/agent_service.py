@@ -1,9 +1,7 @@
 import logging
 import re
 from typing import Dict, Any, Optional
-from main.service.mcp_client import HuggingFaceMCPService
-from main.service.agent_factory import create_agent
-from main.tools.custom_tools import custom_inference_tool
+from main.service.hybrid_query_service import HybridQueryService, HybridQueryResult
 from llama_index.core.workflow import Context
 from main.logs.logging import get_logger
 
@@ -11,9 +9,10 @@ logger = get_logger(__name__)
 
 
 class AgentService:
-    """Service to manage agent lifecycle and execute sentiment analysis"""
+    """Application façade for the hybrid SQL/vector/BM25/MCP agent."""
     
     def __init__(self):
+        self.hybrid_service = HybridQueryService()
         self.agent = None
         self.tools = []
         self._initialized = False
@@ -27,35 +26,13 @@ class AgentService:
             logger.info("Agent already initialized")
             return
         
-        logger.info("Initializing Agent Service...")
-        
-        try:
-            # 1. Initialize MCP Service
-            mcp_service = HuggingFaceMCPService()
-            
-            # 2. Load MCP tools
-            self.tools = await mcp_service.load_tools(allowed_tools=None)
-            logger.info(f"Loaded {len(self.tools)} MCP tools")
-            
-            # 3. Add custom inference tool
-            self.tools.append(custom_inference_tool)
-            logger.info("Added hf_inference tool")
-            
-            # 4. Create agent
-            self.agent = create_agent(self.tools, verbose=False)
-            
-            # 5. Create context for the agent (0.14.10 workflow API)
-            self._context = Context(self.agent)
-            
-            self._initialized = True
-            self._mcp_connected = True
-            logger.info("Agent Service initialized successfully")
-            
-        except Exception as e:
-            logger.error(f"Failed to initialize agent service: {str(e)}")
-            import traceback
-            logger.error(traceback.format_exc())
-            raise
+        logger.info("Initializing hybrid query agent service...")
+        await self.hybrid_service.initialize()
+        self.agent = self.hybrid_service.agent
+        self.tools = self.hybrid_service.tools
+        self._initialized = True
+        self._mcp_connected = not any(e.name == "huggingface_mcp" for e in self.hybrid_service.events)
+        logger.info("Hybrid agent service initialized with %d available tools", len(self.tools))
     
     def is_initialized(self) -> bool:
         """Check if agent is initialized"""
@@ -68,6 +45,10 @@ class AgentService:
     def get_tools_count(self) -> int:
         """Get number of loaded tools"""
         return len(self.tools)
+
+    async def execute_query(self, question: str) -> HybridQueryResult:
+        """Execute a medical query and retain routing and per-tool failure metadata."""
+        return await self.hybrid_service.execute(question)
     
     async def analyze_sentiment(self, text: str, verbose: bool = False) -> Dict[str, Any]:
         """

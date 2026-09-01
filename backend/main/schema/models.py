@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, field_validator
-from typing import List
+from typing import List, Dict
 MAX_QUERY_LENGTH = 2000
 
 
@@ -29,6 +29,9 @@ class QueryResponse(BaseModel):
     """Response model for query endpoint."""
     answer: str
     source_nodes: List[dict] = []
+    tools_used: List[str] = []
+    tool_errors: List[Dict[str, str]] = []
+    routing: str = "agent"
 
 
 class UploadResponse(BaseModel):

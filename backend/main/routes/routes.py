@@ -218,6 +218,21 @@ async def query_rag(request: QueryRequest, background_tasks: BackgroundTasks):
     # 7. Normal response: Format source_nodes (truncate to 200 chars), return answer
     # 8. Error handling: Wrap in try/except, log errors, raise HTTPException
     
+    # Prefer the agentic hybrid service.  It exposes the tool trace to clients and
+    # lets a failed SQL/MCP/vector dependency degrade independently.
+    if _agent_service is not None and hasattr(_agent_service, "execute_query"):
+        try:
+            result = await _agent_service.execute_query(request.question)
+            return QueryResponse(
+                answer=result.answer,
+                source_nodes=[],
+                tools_used=result.tools_used,
+                tool_errors=result.tool_errors,
+                routing=result.routing,
+            )
+        except Exception as exc:
+            logger.exception("Hybrid agent query failed; using legacy retrieval: %s", exc)
+
     try:
         # ----------------------------------------------------
         # 0. Session ID + conversation memory
@@ -420,4 +435,3 @@ async def root():
             "GET /health": "Health check"
         }
     }
-

@@ -46,6 +46,16 @@ This project focuses on building a **Production-Grade RAG System for Medical Edu
 - Evaluates performance against defined SLOs
 - Supports human expert handoff for complex queries
 
+## Hybrid query agent
+
+`POST /query` is served by an OpenAI-compatible agent (Azure OpenAI is supported) with these tools:
+
+- `clinical_sql` for the allow-listed clinical tables in `medical_database_schema.sql`
+- `semantic_search`, `bm25_search`, and `hybrid_document_search` for the pgvector document index
+- Hugging Face MCP tools, when `HF_TOKEN` and `HF_MCP_URL` are configured
+
+The response includes `tools_used`, `tool_errors`, and `routing`. Individual tool setup or execution errors are returned as metadata while the agent tries the remaining capabilities; an unavailable SQL database or missing document index does not take down the API.
+
 ---
 
 ## ⚙️ Functional Requirements
