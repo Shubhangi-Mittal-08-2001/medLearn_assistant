@@ -213,3 +213,108 @@ class FusionRetrievalService:
             (time.perf_counter() - t0) * 1000,
         )
         return retrieved_chunks
+    
+    def query_with_routing(self, query_text: str, recommended_retrievers: list) -> str:
+        """
+        Query using selective retrievers based on routing decision.
+        
+        Args:
+            query_text: The query to process
+            recommended_retrievers: List of retriever names to use (e.g., ["vector"], ["bm25"], ["vector", "bm25"])
+            
+        Returns:
+            The generated answer
+        """
+        retriever = self._build_routed_retriever(recommended_retrievers)
+        query_engine = RetrieverQueryEngine.from_args(retriever=retriever)
+        
+        self.logger.info(
+            "fusion.query_with_routing start recommended_retrievers=%s query_chars=%d",
+            "|".join(recommended_retrievers),
+            len(query_text),
+        )
+        t0 = time.perf_counter()
+        
+        response = query_engine.query(query_text)
+        answer = str(response)
+        
+        self.logger.info(
+            "fusion.query_with_routing done recommended_retrievers=%s ms=%.1f answer_chars=%d",
+            "|".join(recommended_retrievers),
+            (time.perf_counter() - t0) * 1000,
+            len(answer),
+        )
+        return answer
+    
+    def retrieve_with_routing(self, query_text: str, recommended_retrievers: list) -> List[RetrievedChunk]:
+        """
+        Retrieve chunks using selective retrievers based on routing decision.
+        
+        Args:
+            query_text: The query to process
+            recommended_retrievers: List of retriever names to use (e.g., ["vector"], ["bm25"], ["vector", "bm25"])
+            
+        Returns:
+            List of RetrievedChunk objects
+        """
+        retriever = self._build_routed_retriever(recommended_retrievers)
+        
+        self.logger.info(
+            "fusion.retrieve_with_routing start recommended_retrievers=%s query_chars=%d",
+            "|".join(recommended_retrievers),
+            len(query_text),
+        )
+        t0 = time.perf_counter()
+        
+        document_chunks = retriever.retrieve(query_text)
+        retrieved_chunks: List[RetrievedChunk] = []
+        for n in document_chunks:
+            text = n.text
+            score = getattr(n, "score", None)
+            try:
+                metadata = getattr(n.node, "metadata", {})
+                source = metadata.get("filename") or metadata.get("source_path")
+            except Exception as e:
+                self.logger.warning("Error extracting metadata from node: %s", e)
+                source = None
+            retrieved_chunk = RetrievedChunk(text=text, score=score, source=source)
+            retrieved_chunks.append(retrieved_chunk)
+        
+        self.logger.info(
+            "fusion.retrieve_with_routing done recommended_retrievers=%s results=%d ms=%.1f",
+            "|".join(recommended_retrievers),
+            len(retrieved_chunks),
+            (time.perf_counter() - t0) * 1000,
+        )
+        return retrieved_chunks
+    
+    def _build_routed_retriever(self, recommended_retrievers: list):
+        """
+        Build a retriever based on the recommended retriever list.
+        
+        Args:
+            recommended_retrievers: List of retriever names ["vector"], ["bm25"], or ["vector", "bm25"]
+            
+        Returns:
+            A retriever instance (single or fusion)
+        """
+        if not recommended_retrievers:
+            recommended_retrievers = ["vector", "bm25"]
+        
+        # If only vector search is recommended
+        if recommended_retrievers == ["vector"]:
+            self.logger.debug("fusion.routing using vector_only retriever")
+            return self.vector_retriever
+        
+        # If only BM25 is recommended
+        elif recommended_retrievers == ["bm25"]:
+            if self.bm25_retriever is None:
+                self.logger.debug("fusion.routing bm25_not_available falling_back_to vector")
+                return self.vector_retriever
+            self.logger.debug("fusion.routing using bm25_only retriever")
+            return self.bm25_retriever
+        
+        # If both are recommended (default fusion)
+        else:
+            self.logger.debug("fusion.routing using fusion_retriever combining_vector_and_bm25")
+            return self.fusion_retriever

@@ -390,7 +390,7 @@ def process_document(
                         )
 
                         all_nodes.append(image_node)
-                        logger.debug(f"Image processed, created {len(image_node)} node(s) with permanent paths")
+                        logger.debug(f"Image processed, created 1 node with permanent paths")
                     except Exception as e:
                         logger.error(f"Failed to process image {img_info['path']}: {e}", exc_info=True)
             

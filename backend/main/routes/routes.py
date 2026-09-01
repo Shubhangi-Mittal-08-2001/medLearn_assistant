@@ -18,6 +18,7 @@ from main.service.rag_service import (
     process_document,
 )
 from main.service.fusion_retrieval import FusionRetrievalService
+from main.service.query_router import QueryRouter, QueryAnalysis
 from main.evaluation.dataset import get_langfuse_client
 from main.evaluation.dataset_evaluation import (
     evaluate_faithfulness_score,
@@ -225,8 +226,12 @@ async def query_rag(request: QueryRequest, background_tasks: BackgroundTasks):
         conversation_flow = []
 
      # ----------------------------------------------------
-        # 1. RAG Query
+        # 1. Query Routing + RAG Query
         # ----------------------------------------------------
+        # Analyze the query to determine optimal retriever strategy
+        query_analysis: QueryAnalysis = QueryRouter.analyze(request.question)
+        QueryRouter.log_routing_decision(request.question, query_analysis)
+        
         # Ensure the shared LLM and embedding settings are initialized before
         # constructing the fusion query engine.
         get_index()
@@ -235,9 +240,11 @@ async def query_rag(request: QueryRequest, background_tasks: BackgroundTasks):
             table_name=os.getenv("DB_TABLE_NAME", "medical_documents_embeddings"),
             similarity_top_k=MAX_SIMILARITY_TOP_K,
         )
-        answer = fusion_service.query(request.question)
+        
+        # Use routed retriever based on query analysis
+        answer = fusion_service.query_with_routing(request.question, query_analysis.recommended_retrievers)
 
-        # Retrieve the same fusion-ranked chunks for evaluation and handoff context.
+        # Retrieve the same routed chunks for evaluation and handoff context.
         full_chunks = [
             {
                 "chunk_id": None,
@@ -246,7 +253,7 @@ async def query_rag(request: QueryRequest, background_tasks: BackgroundTasks):
                 "score": float(chunk.score) if chunk.score is not None else None,
                 "metadata": {},
             }
-            for chunk in fusion_service.retrieve(request.question)
+            for chunk in fusion_service.retrieve_with_routing(request.question, query_analysis.recommended_retrievers)
         ]
 
         eval_context = "\n\n".join([c["text"] for c in full_chunks])
@@ -256,6 +263,15 @@ async def query_rag(request: QueryRequest, background_tasks: BackgroundTasks):
         langfuse = get_langfuse_client()
         span = langfuse.start_span(name="api_rag_query_handoff", input={"question": request.question})
         trace_id = span.trace_id
+
+        # Log routing decision to trace
+        span.update(
+            metadata={
+                "query_type": query_analysis.query_type.value,
+                "routing_confidence": query_analysis.confidence,
+                "retrievers_used": "|".join(query_analysis.recommended_retrievers),
+            }
+        )
 
         # ----------------------------------------------------
         # 3. Evaluation
