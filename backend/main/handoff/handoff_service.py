@@ -1,5 +1,6 @@
 import os
 import logging
+import re
 import smtplib
 import datetime
 import secrets
@@ -61,18 +62,34 @@ async def evaluate_confidence_score(answer: str) -> Dict[str, Any]:
     """Evaluate LLM confidence score (0-100) and trigger handoff if below threshold (40)."""
     # Use LLM to rate confidence
     # 1. Get Settings.llm (raise ValueError if None)
-    # 2. Prompt: "Rate confidence 0–100.\nAnswer: {answer}"
-    # 3. Parse score from response (extract digits, default to 50)
+    # 2. Prompt the LLM to return one ASCII integer from 0 through 100
+    # 3. Parse one valid ASCII score; otherwise default to 50
     # 4. Return {"trigger": bool, "reason": str, "confidence": int}
     try:
         llm = Settings.llm
         if llm is None:
             raise ValueError("LLM is not configured in Settings.")
-        confidence_prompt = f"Rate confidence 0–100.\nAnswer: {answer}"
+        confidence_prompt = (
+            "Rate confidence in the following answer from 0 to 100. "
+            "Return exactly one ASCII base-10 integer from 0 through 100, "
+            "with no words, punctuation, symbols, or explanation.\n\n"
+            f"Answer: {answer}"
+        )
         confidence_response = await llm.acomplete(confidence_prompt)
-        # Extract digits from response
-        confidence_score = int("".join(filter(str.isdigit, confidence_response.text)) or 50)
-        confidence_score = max(0, min(100, confidence_score))
+        # `str.isdigit()` accepts Unicode digits such as \N{SUPERSCRIPT TWO},
+        # which `int()` cannot parse. Match ASCII digits only and accept a
+        # single value in the required 0–100 range.
+        matches = re.findall(
+            r"(?<![0-9.])(?:0(?:\.[0-9]{1,2})?|1(?:\.0{1,2})?)(?![0-9.])",
+            confidence_response.text,
+        )
+        if len(matches) != 1:
+            logger.warning(
+                "Confidence evaluation returned an invalid score; using default 0.50."
+            )
+            confidence_score = 50
+        else:
+            confidence_score = int(matches[0])
     except Exception as exc:
         logger.warning("Confidence evaluation unavailable: %s", exc)
         return {
@@ -206,4 +223,3 @@ Conversation Flow:
         logger.info("Human handoff email sent successfully.")
     except Exception as e:
         logger.error(f"Failed to send handoff email: {e}")
-

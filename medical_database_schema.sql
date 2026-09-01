@@ -4,7 +4,7 @@
 -- =====================================================
 
 -- Enable PostgreSQL extensions
-CREATE EXTENSION IF NOT EXISTS pgvector;
+CREATE EXTENSION IF NOT EXISTS vector;
 
 -- =====================================================
 -- Table 1: Somatosensory Receptors
