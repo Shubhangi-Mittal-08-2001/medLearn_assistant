@@ -46,6 +46,21 @@ _DESTRUCTIVE_DATABASE_REQUEST = re.compile(
     r")\b",
     re.IGNORECASE,
 )
+_DATABASE_WRITE_REQUEST = re.compile(
+    r"\b(?:insert\s+into|update\s+\w+\s+set|delete\s+from|create\s+(?:table|database|schema)|"
+    r"drop\s+(?:table|tables|database|schema)|truncate\s+(?:table|tables)|alter\s+table)\b",
+    re.IGNORECASE,
+)
+_JAILBREAK_REQUEST = re.compile(
+    r"\b(?:ignore\s+(?:all\s+)?previous\s+instructions|reveal\s+(?:the\s+)?system\s+prompt|"
+    r"disregard\s+(?:all\s+)?prior\s+instructions|bypass\s+(?:your\s+)?safety)\b",
+    re.IGNORECASE,
+)
+_HARMFUL_INTENT = re.compile(
+    r"\b(?:how\s+can\s+i\s+kill\s+someone|help\s+me\s+kill|instructions?\s+to\s+kill|"
+    r"how\s+to\s+(?:murder|poison|hurt)\s+(?:someone|a\s+person))\b",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -55,6 +70,10 @@ class InputDecision:
     sanitized_text: str = ""
     phi_detected: bool = False
     phi_summaries: List[str] = field(default_factory=list)
+    pii_detected: bool = False
+    jailbreak_detected: bool = False
+    database_write_detected: bool = False
+    harmful_intent_detected: bool = False
 
 
 @dataclass(frozen=True)
@@ -94,11 +113,26 @@ class GuardrailsValidator:
         """Reject malformed or unsafe input and redact PHI before processing it."""
         if not text or not text.strip():
             return InputDecision(allowed=False, reason="Empty query", sanitized_text="")
-        if _DESTRUCTIVE_DATABASE_REQUEST.search(text):
+        database_write_detected = bool(
+            _DESTRUCTIVE_DATABASE_REQUEST.search(text) or _DATABASE_WRITE_REQUEST.search(text)
+        )
+        jailbreak_detected = bool(_JAILBREAK_REQUEST.search(text))
+        harmful_intent_detected = bool(_HARMFUL_INTENT.search(text))
+        if database_write_detected or jailbreak_detected or harmful_intent_detected:
+            if database_write_detected:
+                reason = "Destructive database operations are not allowed on this read-only query endpoint."
+            elif jailbreak_detected:
+                reason = "Requests to bypass safety instructions are not allowed."
+            else:
+                reason = "Requests to harm another person are not allowed."
             return InputDecision(
                 allowed=False,
-                reason="Destructive database operations are not allowed on this read-only query endpoint.",
+                reason=reason,
                 sanitized_text="",
+                pii_detected=False,
+                jailbreak_detected=jailbreak_detected,
+                database_write_detected=database_write_detected,
+                harmful_intent_detected=harmful_intent_detected,
             )
         sanitized, summaries = self._fallback_redact(text.strip())
         return InputDecision(
@@ -106,6 +140,7 @@ class GuardrailsValidator:
             sanitized_text=sanitized,
             phi_detected=bool(summaries),
             phi_summaries=summaries,
+            pii_detected=bool(summaries),
         )
 
     @staticmethod

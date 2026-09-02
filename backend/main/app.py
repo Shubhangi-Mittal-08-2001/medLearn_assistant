@@ -4,13 +4,14 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from main.routes.routes import router, set_agent_service
 from main.service.agent_service import AgentService
-from main.logs.logging import configure_logging, get_logger
-
-# Configure logging on startup
-configure_logging()
 
 # Load environment variables from .env file
 load_dotenv()
+
+from main.logs.logging import configure_logging, get_logger
+
+# Configure logging after loading environment-based logging settings.
+configure_logging()
 
 logger = get_logger(__name__)
 

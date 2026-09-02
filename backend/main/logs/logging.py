@@ -3,12 +3,30 @@
 from __future__ import annotations
 
 import logging
+import json
 import os
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
 
 # Module-level logger
 _root_logger = None
+
+
+class StructuredFormatter(logging.Formatter):
+    """Format log records as JSON for log collectors and correlation tooling."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        payload = {
+            "timestamp": self.formatTime(record, "%Y-%m-%dT%H:%M:%S%z"),
+            "level": record.levelname,
+            "logger": record.name,
+            "function": record.funcName,
+            "line": record.lineno,
+            "message": record.getMessage(),
+        }
+        if record.exc_info:
+            payload["exception"] = self.formatException(record.exc_info)
+        return json.dumps(payload, ensure_ascii=True)
 
 
 def configure_logging() -> logging.Logger:
@@ -27,14 +45,19 @@ def configure_logging() -> logging.Logger:
 
     level_name = os.getenv("LOG_LEVEL", "INFO").upper()
     level = getattr(logging, level_name, logging.INFO)
+    log_format = os.getenv("LOG_FORMAT", "text").lower()
 
     _root_logger = logging.getLogger()
     _root_logger.setLevel(level)
     _root_logger.handlers.clear()
 
-    formatter = logging.Formatter(
-        "%(asctime)s - %(levelname)s - %(name)s - %(funcName)s:%(lineno)d - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
+    formatter = (
+        StructuredFormatter()
+        if log_format == "json"
+        else logging.Formatter(
+            "%(asctime)s - %(levelname)s - %(name)s - %(funcName)s:%(lineno)d - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
     )
 
     # Console Handler

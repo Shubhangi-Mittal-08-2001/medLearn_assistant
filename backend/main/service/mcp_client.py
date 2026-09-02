@@ -1,6 +1,8 @@
 import logging
 import os
 from typing import List, Any
+
+from dotenv import load_dotenv
 from llama_index.core.tools import BaseTool
 
 # Note: In a real environment, ensure 'mcp' and 'llama-index-tools-mcp' are installed.
@@ -14,6 +16,7 @@ except ImportError:
     BasicMCPClient = Any
     McpToolSpec = Any
 
+load_dotenv()
 logger = logging.getLogger(__name__)
 
 class HuggingFaceMCPService:

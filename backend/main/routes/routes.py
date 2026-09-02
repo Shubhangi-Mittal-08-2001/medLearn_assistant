@@ -8,9 +8,11 @@ import re
 import logging
 import tempfile
 import time
+from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 
-from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
+from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Depends, status
+from fastapi.security import OAuth2PasswordBearer
 
 from main.service.rag_service import (
     add_documents_to_index,
@@ -44,11 +46,73 @@ from main.schema.models import (
 )
 from main.logs.logging import get_logger
 from main.service.guardrails import GuardrailsValidator
+from main.security.security import validate_token, get_authenticated_user
 
 logger = get_logger(__name__)
 
 # Load environment variables
 load_dotenv()
+
+# Authentication configuration
+AUTH_ENABLED = os.getenv("AUTH_ENABLED", "true").lower() == "true"
+logger.info(f"Authentication enabled: {AUTH_ENABLED}")
+
+
+async def get_current_user(
+    token: Optional[str] = Depends(OAuth2PasswordBearer(tokenUrl="token", auto_error=False))
+) -> Dict[str, Any]:
+    """
+    Get authenticated user. Raises 401 if not authenticated or AUTH_ENABLED=true but token missing.
+    
+    In production (AUTH_ENABLED=true):
+    - Requires valid JWT token
+    - Returns user_id, email, role
+    
+    In development (AUTH_ENABLED=false):
+    - Returns mock user with role='user'
+    """
+    if not AUTH_ENABLED:
+        # Development mode: return mock user
+        logger.debug("Using mock user (auth disabled)")
+        return {
+            "user_id": "dev-user",
+            "email": "dev@example.com",
+            "role": "user",
+            "iss": "dev-mode",
+            "aud": "dev-mode",
+        }
+    
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authentication token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Production: validate JWT and extract user info
+    try:
+        payload = validate_token(token)
+        user_role = payload.get("https://medlearn.local/roles", ["user"])
+        if isinstance(user_role, str):
+            user_role = [user_role]
+        role = "admin" if any(r.lower() == "admin" for r in user_role) else "user"
+        
+        return {
+            "user_id": payload.get("sub", "unknown"),
+            "email": payload.get("email", "unknown"),
+            "role": role,
+            "iss": payload.get("iss"),
+            "aud": payload.get("aud"),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error validating token: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 router = APIRouter()
 
@@ -157,9 +221,14 @@ def sanitize_filename(filename: str) -> str:
 
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(
+    file: UploadFile = File(...),
+    current_user: Dict[str, Any] = Depends(get_current_user),
+):
     """
     Upload a medical document for indexing with multimodal content extraction.
+    
+    **Requires Authentication**
     
     Accepts: .pdf, .docx, .doc, .txt, .xlsx (configurable in .env)
     Max size: 200 KB (configurable in .env as MAX_UPLOAD_SIZE_KB)
@@ -174,6 +243,7 @@ async def upload_document(file: UploadFile = File(...)):
     Returns:
         UploadResponse with message and number of documents indexed
     """
+    logger.info(f"[UPLOAD] Document upload initiated by user: {current_user.get('user_id')} ({current_user.get('email')})")
     logger.info(f"[UPLOAD] Starting document upload: {file.filename}")
     logger.debug(f"[UPLOAD] Content-Type: {file.content_type}, Size: {file.size if hasattr(file, 'size') else 'unknown'}")
 
@@ -250,9 +320,24 @@ async def upload_document(file: UploadFile = File(...)):
 
 
 @router.post("/query", response_model=QueryResponse)
-async def query_rag(request: QueryRequest, background_tasks: BackgroundTasks):
-    """Query RAG system with evaluation and human handoff logic."""
+async def query_rag(
+    request: QueryRequest,
+    background_tasks: BackgroundTasks,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+):
+    """
+    Query RAG system with evaluation and human handoff logic.
+    
+    **Requires Authentication**
+    """
     start_time = time.perf_counter()
+    logger.info(f"[QUERY] Query received from user: {current_user.get('user_id')} ({current_user.get('email')})")
+    logger.info(f"[QUERY] User role: {current_user.get('role')}")
+    
+    # Override email from authenticated user if in production mode
+    if AUTH_ENABLED:
+        request.user_email = current_user.get("email", request.user_email)
+    
     input_decision = _guardrails_validator.decide_input(request.question)
     if not input_decision.allowed:
         logger.warning("Blocked query input: %s", input_decision.reason)

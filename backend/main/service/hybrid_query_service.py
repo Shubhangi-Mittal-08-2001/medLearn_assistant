@@ -14,6 +14,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Iterable
 
+from dotenv import load_dotenv
 from llama_index.core import SQLDatabase
 from llama_index.core.query_engine import NLSQLTableQueryEngine, RetrieverQueryEngine
 from llama_index.core.tools import QueryEngineTool
@@ -28,6 +29,7 @@ from main.service.rag_service import create_vector_store, get_llm, get_query_eng
 from main.tools.custom_tools import custom_inference_tool
 from llama_index.llms.openai import utils as openai_utils
 
+load_dotenv()
 logger = logging.getLogger(__name__)
 
 CLINICAL_TABLES = [
@@ -126,6 +128,44 @@ class TrackingQueryEngine:
             raise
 
 
+class TrackingTool:
+    """Wraps LlamaIndex tools so MCP/custom tool calls are recorded in the same event stream."""
+
+    def __init__(self, tool: Any, events: list[ToolExecution]):
+        self.tool = tool
+        self.events = events
+        self.metadata = getattr(tool, "metadata", None)
+        self.name = getattr(self.metadata, "name", None) or getattr(tool, "name", type(tool).__name__)
+        self.__name__ = self.name
+
+    def __getattr__(self, item: str) -> Any:
+        return getattr(self.tool, item)
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        return self.call(*args, **kwargs)
+
+    def call(self, *args: Any, **kwargs: Any) -> Any:
+        try:
+            response = self.tool.call(*args, **kwargs)
+            self.events.append(ToolExecution(self.name, "success"))
+            return response
+        except Exception as exc:
+            self.events.append(ToolExecution(self.name, "error", str(exc)))
+            raise
+
+    async def acall(self, *args: Any, **kwargs: Any) -> Any:
+        try:
+            if hasattr(self.tool, "acall"):
+                response = await self.tool.acall(*args, **kwargs)
+            else:
+                response = await asyncio.to_thread(self.tool.call, *args, **kwargs)
+            self.events.append(ToolExecution(self.name, "success"))
+            return response
+        except Exception as exc:
+            self.events.append(ToolExecution(self.name, "error", str(exc)))
+            raise
+
+
 def _database_url() -> str | URL:
     if url := os.getenv("DATABASE_URL"):
         return url
@@ -213,15 +253,38 @@ expose PII."""
         self.initialization_errors: list[ToolExecution] = []
         self._initialized = False
 
+    @staticmethod
+    def _tool_name(tool: Any) -> str:
+        metadata = getattr(tool, "metadata", None)
+        if metadata is not None:
+            name = getattr(metadata, "name", None) or getattr(metadata, "tool_name", None)
+            if name:
+                return str(name)
+        return getattr(tool, "name", type(tool).__name__)
+
+    def _register_tool(self, tool: Any, source: str) -> None:
+        if tool is None:
+            return
+        wrapped_tool = TrackingTool(tool, self.events) if not isinstance(tool, TrackingTool) else tool
+        tool_name = self._tool_name(wrapped_tool)
+        if any(self._tool_name(existing) == tool_name for existing in self.tools):
+            logger.debug("Tool %s already registered from %s; skipping duplicate registration", tool_name, source)
+            return
+        self.tools.append(wrapped_tool)
+        logger.info("Registered %s tool from %s", tool_name, source)
+
     async def initialize(self) -> None:
         if self._initialized:
             return
         self.events = []
-        self.tools = create_query_engine_tools(self.events, self.source_nodes)
+        self.tools = []
+        for tool in create_query_engine_tools(self.events, self.source_nodes):
+            self._register_tool(tool, "data_tools")
         try:
             mcp_tools = await HuggingFaceMCPService().load_tools()
-            self.tools.extend(mcp_tools)
-            self.tools.append(custom_inference_tool)
+            for tool in mcp_tools:
+                self._register_tool(tool, "mcp")
+            self._register_tool(custom_inference_tool, "custom_tool")
         except Exception as exc:
             self.events.append(ToolExecution("huggingface_mcp", "unavailable", str(exc)))
             logger.warning("Hugging Face MCP unavailable; continuing with local tools: %s", exc)

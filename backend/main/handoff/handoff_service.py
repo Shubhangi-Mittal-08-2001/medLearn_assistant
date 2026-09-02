@@ -3,12 +3,16 @@ import logging
 import smtplib
 import datetime
 import secrets
+import re
 from email.mime.text import MIMEText
 from typing import Dict, Any, Optional
+from dotenv import load_dotenv
 from llama_index.core.settings import Settings
 
 
 logger = logging.getLogger(__name__)
+
+load_dotenv()
 
 FAITHFULNESS_THRESHOLD = 0.6
 RELEVANCE_THRESHOLD = 0.5
@@ -70,8 +74,14 @@ async def evaluate_confidence_score(answer: str) -> Dict[str, Any]:
             raise ValueError("LLM is not configured in Settings.")
         confidence_prompt = f"Rate confidence 0–100.\nAnswer: {answer}"
         confidence_response = await llm.acomplete(confidence_prompt)
-        # Extract digits from response
-        confidence_score = int("".join(filter(str.isdigit, confidence_response.text)) or 50)
+        score_match = re.search(
+            r"(?:confidence|score|rating)\D{0,12}(100|[0-9]{1,2})\b",
+            confidence_response.text,
+            re.IGNORECASE,
+        )
+        if score_match is None:
+            score_match = re.search(r"\b(100|[0-9]{1,2})\b", confidence_response.text)
+        confidence_score = int(score_match.group(1)) if score_match else 50
         confidence_score = max(0, min(100, confidence_score))
     except Exception as exc:
         logger.warning("Confidence evaluation unavailable: %s", exc)
@@ -110,7 +120,7 @@ async def evaluate_explicit_user_request(message: str) -> Dict[str, Any]:
         user_request_prompt = f"Does the user want to speak with a human agent? Answer with 'YES' or 'NO'.\nMessage: {message}"
         user_request_response = await llm.acomplete(user_request_prompt)
 
-        if "YES" in user_request_response.text.upper():
+        if re.search(r"\bYES\b", user_request_response.text, re.IGNORECASE):
             return {"trigger": True, "reason": "explicit user request for human help"}
         return {"trigger": False, "reason": "no explicit user request for human help"}
     except Exception as exc:

@@ -46,6 +46,7 @@ class QueryRouter:
         r'\b(how|why|explain|describe|understand|mechanism|process|relationship|difference|compare|contrast|adapt|function|role|interact|work)\b',
         r'\b(sense|perceive|respond|detect|signal|pathway|regulation)\b',
         r'\b(what.*?difference|how.*?work|why.*?occur|explain.*?mechanism)\b',
+        r'\b(tactile|texture|perception|feel|aging|older)\b',
     ]
     
     # Patterns for BM25 search (exact/technical)
@@ -60,8 +61,10 @@ class QueryRouter:
     
     # Patterns suggesting hybrid/fusion queries
     HYBRID_PATTERNS = [
+        r'\b(compare|differentiate|distinguish|contrast|versus|vs\.?|relative to)\b',
         r'\b(compare|differentiate|distinguish|map|relate|associate|connect)\b.*\b(based on|with|using)\b',
-        r'\b(feedback|interaction|integration|coordination)\b',
+        r'\b(feedback|interaction|integration|coordination|loop)\b',
+        r'\b(and|or)\b.*\b(versus|vs\.?|compared with)\b',
     ]
 
     # The indexed learning material currently covers the somatosensory system.
@@ -121,10 +124,18 @@ class QueryRouter:
         # Check for hybrid patterns
         for pattern in cls.HYBRID_PATTERNS:
             if re.search(pattern, query_lower, re.IGNORECASE):
-                scores[QueryType.FUSION] += 0.5
+                scores[QueryType.FUSION] += 0.8
                 reasons.append(f"Contains hybrid pattern requiring both methods")
                 break
-        
+
+        # Direct comparison wording should prefer fusion even when the query also
+        # contains conceptual or technical vocabulary. This captures questions like
+        # "Compare X versus Y" or "How do A and B interact?" which need both
+        # semantic and keyword evidence.
+        if re.search(r'\b(compare|versus|vs\.?|differentiate|distinguish|contrast|interact|relationship)\b', query_lower):
+            scores[QueryType.FUSION] += 0.7
+            reasons.append("Direct comparison or interaction language requires fusion")
+
         # Check query length and complexity
         words = query_text.split()
         if len(words) > 15:

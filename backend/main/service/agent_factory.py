@@ -1,6 +1,8 @@
 import logging
 import os
 from typing import List
+
+from dotenv import load_dotenv
 from llama_index.core.tools import BaseTool
 from llama_index.llms.azure_openai import AzureOpenAI
 
@@ -8,6 +10,7 @@ from llama_index.llms.azure_openai import AzureOpenAI
 from llama_index.core.agent.workflow import ReActAgent
 from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 
+load_dotenv()
 logger = logging.getLogger(__name__)
 
 def create_llm():

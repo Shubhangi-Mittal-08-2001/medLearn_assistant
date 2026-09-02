@@ -10,9 +10,16 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 
 from dotenv import load_dotenv
-from observability import observe
+try:
+    from observability import observe
+except ImportError:
+    def observe():
+        def decorator(func):
+            return func
+        return decorator
 
 load_dotenv()
+import os
 
 ## Task 3 - Complete the security.py file to handle JWT authentication and authorization.
 
@@ -128,3 +135,87 @@ def get_user_email_from_auth0(token: str) -> Optional[str]:
         return userinfo.get("email")
     except Exception:
         return None
+
+
+def get_user_role(payload: Dict[str, Any] = Depends(validate_token)) -> str:
+    """
+    Extract user role from Auth0 JWT claims.
+    Auth0 stores custom claims with namespace: https://medlearn.local/roles
+    Defaults to 'user' if no role claim found.
+    
+    Args:
+        payload: Validated JWT payload from validate_token()
+        
+    Returns:
+        User role: 'admin' or 'user'
+    """
+    # Auth0 stores custom claims with namespace to avoid conflicts
+    custom_namespace = os.getenv("AUTH0_CUSTOM_NAMESPACE", "https://medlearn.local")
+    roles_claim = f"{custom_namespace}/roles"
+    
+    # Get roles array from claims (Auth0 typically returns as list)
+    roles = payload.get(roles_claim, [])
+    
+    # Handle case where roles might be a single string instead of list
+    if isinstance(roles, str):
+        roles = [roles]
+    
+    # Check for admin role (case-insensitive)
+    if roles and any(r.lower() == "admin" for r in roles):
+        return "admin"
+    
+    return "user"
+
+
+def require_role(allowed_roles: list[str]):
+    """
+    FastAPI dependency factory that requires user to have one of the specified roles.
+    
+    Usage:
+        @router.post("/admin-only")
+        async def admin_endpoint(role: str = Depends(require_role(["admin"]))):
+            ...
+    
+    Args:
+        allowed_roles: List of allowed role names (e.g., ["admin"])
+        
+    Returns:
+        Dependency function that validates role
+    """
+    async def _require_role(
+        payload: Dict[str, Any] = Depends(validate_token),
+    ) -> str:
+        user_role = get_user_role(payload)
+        if user_role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Insufficient permissions. Required roles: {', '.join(allowed_roles)}. User role: {user_role}",
+            )
+        return user_role
+    
+    return _require_role
+
+
+async def get_authenticated_user(payload: Dict[str, Any] = Depends(validate_token)) -> Dict[str, Any]:
+    """
+    Get authenticated user info from JWT claims.
+    Returns user_id, email, and role.
+    
+    Args:
+        payload: Validated JWT payload
+        
+    Returns:
+        Dict with user_id, email, role
+    """
+    custom_namespace = os.getenv("AUTH0_CUSTOM_NAMESPACE", "https://medlearn.local")
+    roles_claim = f"{custom_namespace}/roles"
+    
+    user_role = get_user_role(payload)
+    
+    return {
+        "user_id": payload.get("sub", "unknown"),
+        "email": payload.get("email", "unknown"),
+        "role": user_role,
+        "iss": payload.get("iss"),
+        "aud": payload.get("aud"),
+    }
