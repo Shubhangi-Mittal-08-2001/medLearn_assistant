@@ -343,7 +343,10 @@ async def query_rag(
         logger.warning("Blocked query input: %s", input_decision.reason)
         raise HTTPException(status_code=400, detail=input_decision.reason)
     request.question = input_decision.sanitized_text
-    if not QueryRouter.is_relevant_to_medlearn_documents(request.question):
+    # Scope checking must not pre-empt the agent: Hugging Face and SQL intents can
+    # be valid even when they do not mention a term from the uploaded textbook.
+    # Retain the legacy scope gate only when the agentic runtime is unavailable.
+    if (_agent_service is None or not hasattr(_agent_service, "execute_query")) and not QueryRouter.is_relevant_to_medlearn_documents(request.question):
         # Do not reject a question simply because the current knowledge base
         # cannot cover it.  It cannot be answered reliably with the available
         # sources/tools, so create the same human-review handoff used for
@@ -437,7 +440,11 @@ async def query_rag(
                 # handoff decision and delivery logic used by legacy retrieval
                 # before returning its response.
                 try:
-                    confidence_handoff = await evaluate_confidence_score(result.answer)
+                    confidence_handoff = await evaluate_confidence_score(
+                        answer=result.answer,
+                        question=request.question,
+                        relevant_chunks=result.source_nodes,
+                    )
                 except Exception as exc:
                     logger.warning("Confidence evaluation unavailable: %s", exc)
                     confidence_handoff = {"trigger": False, "confidence": 50}
@@ -602,7 +609,11 @@ async def query_rag(
 
         # LLM confidence 
         try:
-            confidence_handoff = await evaluate_confidence_score(answer)
+            confidence_handoff = await evaluate_confidence_score(
+                answer=answer,
+                question=request.question,
+                relevant_chunks=full_chunks,
+            )
         except Exception as exc:
             logger.warning("Confidence evaluation unavailable: %s", exc)
             confidence_handoff = {"trigger": False, "confidence": 50}

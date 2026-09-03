@@ -1844,3 +1844,1102 @@ TypeError: object of type 'TextNode' has no len()
 2026-09-02 01:51:33 - INFO - main.app - lifespan:35 - ============================================================
 2026-09-02 01:51:33 - INFO - main.app - lifespan:36 - Shutting down MedLearn AI Assistant...
 2026-09-02 01:51:33 - INFO - main.app - lifespan:37 - ============================================================
+2026-09-02 22:57:25 - INFO - main.app - <module>:49 - FastAPI app initialized with version 1.0.0
+2026-09-02 22:57:25 - INFO - main.app - lifespan:24 - ============================================================
+2026-09-02 22:57:25 - INFO - main.app - lifespan:25 - Initializing MedLearn AI Assistant Agent...
+2026-09-02 22:57:25 - INFO - main.app - lifespan:26 - ============================================================
+2026-09-02 22:57:25 - INFO - main.service.agent_service - initialize:29 - Initializing hybrid query agent service...
+2026-09-02 22:57:26 - INFO - main.service.rag_service - get_llm:201 - LLM not yet initialized, initializing services...
+2026-09-02 22:57:26 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-09-02 22:57:26 - INFO - main.service.agent_factory - create_llm:31 - Initializing Azure OpenAI LLM...
+2026-09-02 22:57:26 - INFO - main.service.agent_factory - create_embel_model:42 - Initializing Azure OpenAI Embed Model...
+2026-09-02 22:57:26 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-09-02 22:57:26 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-09-02 22:57:26 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-09-02 22:57:26 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-02 22:57:26 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medlearn_assistant...
+2026-09-02 22:57:26 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medlearn_assistant)
+2026-09-02 22:57:26 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-09-02 22:57:26 - INFO - main.service.rag_service - get_query_engine:178 - Creating new query engine with similarity_top_k=4
+2026-09-02 22:57:26 - INFO - main.service.query_engine - create_query_engine:24 - Creating query engine with similarity_top_k=4...
+2026-09-02 22:57:26 - INFO - main.service.query_engine - create_query_engine:33 - ✓ Query engine created successfully (similarity_top_k=4)
+2026-09-02 22:57:26 - INFO - main.service.rag_service - get_query_engine:182 - ✓ Query engine created and cached for similarity_top_k=4
+2026-09-02 22:57:26 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-02 22:57:26 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medlearn_assistant top_k=4 configured_retrieval=vector+bm25
+2026-09-02 22:57:26 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medlearn_assistant
+2026-09-02 22:57:26 - INFO - main.service.fusion_retrieval - _init_retrievers:91 - fusion.retrievers loaded_bm25_nodes count=16
+2026-09-02 22:57:26 - INFO - main.service.fusion_retrieval - _init_retrievers:113 - fusion.retrievers configured retrieval_type=hybrid(vector+bm25) vector_enabled=True bm25_enabled=True
+2026-09-02 22:57:26 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=114.6 table=medlearn_assistant top_k=4 mode=reciprocal_rerank retrieval_type=hybrid(vector+bm25)
+2026-09-02 22:57:26 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-02 22:57:26 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medlearn_assistant top_k=4 configured_retrieval=vector+bm25
+2026-09-02 22:57:26 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medlearn_assistant
+2026-09-02 22:57:26 - INFO - main.service.fusion_retrieval - _init_retrievers:91 - fusion.retrievers loaded_bm25_nodes count=16
+2026-09-02 22:57:26 - INFO - main.service.fusion_retrieval - _init_retrievers:113 - fusion.retrievers configured retrieval_type=hybrid(vector+bm25) vector_enabled=True bm25_enabled=True
+2026-09-02 22:57:26 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=83.2 table=medlearn_assistant top_k=4 mode=reciprocal_rerank retrieval_type=hybrid(vector+bm25)
+2026-09-02 22:57:26 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered clinical_sql tool from data_tools
+2026-09-02 22:57:26 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered semantic_search tool from data_tools
+2026-09-02 22:57:26 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered bm25_search tool from data_tools
+2026-09-02 22:57:26 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hybrid_document_search tool from data_tools
+2026-09-02 22:57:26 - INFO - main.service.mcp_client - load_tools:51 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-09-02 22:57:27 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:181 - Received session ID: d8256820-47f6-4221-a911-eb22c9bfde83
+2026-09-02 22:57:27 - INFO - mcp.client.streamable_http - _maybe_extract_protocol_version_from_message:193 - Negotiated protocol version: 2025-11-25
+2026-09-02 22:57:27 - INFO - mcp.client.streamable_http - handle_get_stream:298 - GET stream disconnected, reconnecting in 1000ms...
+2026-09-02 22:57:27 - INFO - main.service.mcp_client - load_tools:84 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-09-02 22:57:27 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hf_whoami tool from mcp
+2026-09-02 22:57:27 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hub_repo_search tool from mcp
+2026-09-02 22:57:27 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hub_repo_details tool from mcp
+2026-09-02 22:57:27 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hf_fs tool from mcp
+2026-09-02 22:57:27 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hf_inference tool from custom_tool
+2026-09-02 22:57:27 - INFO - main.service.agent_factory - create_llm:31 - Initializing Azure OpenAI LLM...
+2026-09-02 22:57:27 - INFO - main.service.hybrid_query_service - _create_openai_agent:314 - Creating FunctionAgent with native tool calling
+2026-09-02 22:57:28 - INFO - main.service.agent_service - initialize:35 - Hybrid agent service initialized with 9 available tools
+2026-09-02 22:57:28 - INFO - main.routes.routes - set_agent_service:183 - Agent service initialized in routes. Service: AgentService
+2026-09-02 22:57:28 - INFO - main.app - lifespan:30 - ✓ Agent ready for medical related analysis and query...
+2026-09-02 22:57:28 - INFO - main.app - lifespan:31 - ============================================================
+2026-09-02 23:25:55 - INFO - main.app - lifespan:36 - ============================================================
+2026-09-02 23:25:55 - INFO - main.app - lifespan:37 - Shutting down MedLearn AI Assistant...
+2026-09-02 23:25:55 - INFO - main.app - lifespan:38 - ============================================================
+2026-09-02 23:26:08 - INFO - main.app - <module>:69 - CORS enabled for origins: ['http://localhost:5173', 'http://127.0.0.1:5173']
+2026-09-02 23:26:08 - INFO - main.app - <module>:72 - FastAPI app initialized with version 1.0.0
+2026-09-02 23:26:08 - INFO - main.app - lifespan:26 - ============================================================
+2026-09-02 23:26:08 - INFO - main.app - lifespan:27 - Initializing MedLearn AI Assistant Agent...
+2026-09-02 23:26:08 - INFO - main.app - lifespan:28 - ============================================================
+2026-09-02 23:26:08 - INFO - main.service.agent_service - initialize:29 - Initializing hybrid query agent service...
+2026-09-02 23:26:08 - INFO - main.service.rag_service - get_llm:201 - LLM not yet initialized, initializing services...
+2026-09-02 23:26:08 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-09-02 23:26:08 - INFO - main.service.agent_factory - create_llm:31 - Initializing Azure OpenAI LLM...
+2026-09-02 23:26:08 - INFO - main.service.agent_factory - create_embel_model:42 - Initializing Azure OpenAI Embed Model...
+2026-09-02 23:26:08 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-09-02 23:26:08 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-09-02 23:26:08 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-09-02 23:26:08 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-02 23:26:08 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medlearn_assistant...
+2026-09-02 23:26:08 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medlearn_assistant)
+2026-09-02 23:26:08 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-09-02 23:26:08 - INFO - main.service.rag_service - get_query_engine:178 - Creating new query engine with similarity_top_k=4
+2026-09-02 23:26:08 - INFO - main.service.query_engine - create_query_engine:24 - Creating query engine with similarity_top_k=4...
+2026-09-02 23:26:08 - INFO - main.service.query_engine - create_query_engine:33 - ✓ Query engine created successfully (similarity_top_k=4)
+2026-09-02 23:26:08 - INFO - main.service.rag_service - get_query_engine:182 - ✓ Query engine created and cached for similarity_top_k=4
+2026-09-02 23:26:08 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-02 23:26:08 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medlearn_assistant top_k=4 configured_retrieval=vector+bm25
+2026-09-02 23:26:08 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medlearn_assistant
+2026-09-02 23:26:08 - INFO - main.service.fusion_retrieval - _init_retrievers:91 - fusion.retrievers loaded_bm25_nodes count=16
+2026-09-02 23:26:08 - INFO - main.service.fusion_retrieval - _init_retrievers:113 - fusion.retrievers configured retrieval_type=hybrid(vector+bm25) vector_enabled=True bm25_enabled=True
+2026-09-02 23:26:08 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=90.6 table=medlearn_assistant top_k=4 mode=reciprocal_rerank retrieval_type=hybrid(vector+bm25)
+2026-09-02 23:26:08 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-02 23:26:08 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medlearn_assistant top_k=4 configured_retrieval=vector+bm25
+2026-09-02 23:26:08 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medlearn_assistant
+2026-09-02 23:26:08 - INFO - main.service.fusion_retrieval - _init_retrievers:91 - fusion.retrievers loaded_bm25_nodes count=16
+2026-09-02 23:26:08 - INFO - main.service.fusion_retrieval - _init_retrievers:113 - fusion.retrievers configured retrieval_type=hybrid(vector+bm25) vector_enabled=True bm25_enabled=True
+2026-09-02 23:26:08 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=83.8 table=medlearn_assistant top_k=4 mode=reciprocal_rerank retrieval_type=hybrid(vector+bm25)
+2026-09-02 23:26:08 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered clinical_sql tool from data_tools
+2026-09-02 23:26:08 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered semantic_search tool from data_tools
+2026-09-02 23:26:08 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered bm25_search tool from data_tools
+2026-09-02 23:26:08 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hybrid_document_search tool from data_tools
+2026-09-02 23:26:08 - INFO - main.service.mcp_client - load_tools:51 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-09-02 23:26:09 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:181 - Received session ID: 2f378696-9304-44cd-82cc-74380cce11f9
+2026-09-02 23:26:09 - INFO - mcp.client.streamable_http - _maybe_extract_protocol_version_from_message:193 - Negotiated protocol version: 2025-11-25
+2026-09-02 23:26:09 - INFO - mcp.client.streamable_http - handle_get_stream:298 - GET stream disconnected, reconnecting in 1000ms...
+2026-09-02 23:26:10 - INFO - main.service.mcp_client - load_tools:84 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-09-02 23:26:10 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hf_whoami tool from mcp
+2026-09-02 23:26:10 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hub_repo_search tool from mcp
+2026-09-02 23:26:10 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hub_repo_details tool from mcp
+2026-09-02 23:26:10 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hf_fs tool from mcp
+2026-09-02 23:26:10 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hf_inference tool from custom_tool
+2026-09-02 23:26:10 - INFO - main.service.agent_factory - create_llm:31 - Initializing Azure OpenAI LLM...
+2026-09-02 23:26:10 - INFO - main.service.hybrid_query_service - _create_openai_agent:314 - Creating FunctionAgent with native tool calling
+2026-09-02 23:26:10 - INFO - main.service.agent_service - initialize:35 - Hybrid agent service initialized with 9 available tools
+2026-09-02 23:26:10 - INFO - main.routes.routes - set_agent_service:183 - Agent service initialized in routes. Service: AgentService
+2026-09-02 23:26:10 - INFO - main.app - lifespan:32 - ✓ Agent ready for medical related analysis and query...
+2026-09-02 23:26:10 - INFO - main.app - lifespan:33 - ============================================================
+2026-09-02 23:50:03 - INFO - main.routes.routes - query_rag:334 - [QUERY] Query received from user: auth0|6a47e7ae90cbbefcace365b9 (unknown)
+2026-09-02 23:50:03 - INFO - main.routes.routes - query_rag:335 - [QUERY] User role: user
+2026-09-02 23:50:03 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentWorkflowStartEvent(user_msg='How does a reflex arc work?', chat_history=None, memory=None, max_iterations=None, early_stopping_method=None)
+2026-09-02 23:50:03 - INFO - workflows.verbose - write_to_event_stream:78 - [init_run:0] started from AgentWorkflowStartEvent
+2026-09-02 23:50:03 - INFO - workflows.verbose - write_to_event_stream:86 - [init_run:0] complete with AgentInput
+2026-09-02 23:50:03 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='How does a reflex arc work?')])], current_agent_name='Agent')
+2026-09-02 23:50:03 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-02 23:50:03 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-02 23:50:03 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='You are MedLearn, a medical education assistant for indexed\ncour...
+2026-09-02 23:50:03 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-02 23:50:12 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-02 23:50:12 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_Aw5HUTuE4yThVLYcxTX8Th68', function=Func...
+2026-09-02 23:50:12 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-02 23:50:12 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='semantic_search', tool_kwargs={'query': 'reflex arc mechanism sensory neuron interneuron motor neuron monosynaptic polysynaptic stretch reflex withdrawal reflex pathway steps re...
+2026-09-02 23:50:12 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-02 23:50:12 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-02 23:50:31 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-02 23:50:31 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='semantic_search', tool_kwargs={'query': 'reflex arc mechanism sensory neuron interneuron motor neuron monosynaptic polysynaptic stretch reflex withdrawal reflex pathway st...
+2026-09-02 23:50:31 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-02 23:50:31 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-02 23:50:31 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='How does a reflex arc work?')])], current_agent_name='Agent')
+2026-09-02 23:50:31 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-02 23:50:31 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-02 23:50:31 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='You are MedLearn, a medical education assistant for indexed\ncour...
+2026-09-02 23:50:31 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-02 23:50:44 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-02 23:50:44 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Good question — a reflex arc is a simple neural pathway ...
+2026-09-02 23:50:44 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-02 23:50:44 - INFO - workflows.verbose - on_tick:115 - [result] StopEvent(result=AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Good question — a reflex arc is a simpl...
+2026-09-02 23:50:44 - INFO - workflows.verbose - write_to_event_stream:86 - [parse_agent_output:0] complete with StopEvent
+2026-09-02 23:51:03 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 35d1494bdfbe5af4c7f9d8289ddf5c68: 0.60
+2026-09-02 23:51:07 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 35d1494bdfbe5af4c7f9d8289ddf5c68: 1.00
+2026-09-02 23:51:16 - INFO - main.routes.routes - query_rag:524 - Query completed in 73397.24 ms
+2026-09-02 23:52:32 - INFO - main.routes.routes - query_rag:334 - [QUERY] Query received from user: auth0|6a47e7ae90cbbefcace365b9 (unknown)
+2026-09-02 23:52:32 - INFO - main.routes.routes - query_rag:335 - [QUERY] User role: user
+2026-09-02 23:52:32 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentWorkflowStartEvent(user_msg='How does a reflex arc work?', chat_history=None, memory=None, max_iterations=None, early_stopping_method=None)
+2026-09-02 23:52:32 - INFO - workflows.verbose - write_to_event_stream:78 - [init_run:0] started from AgentWorkflowStartEvent
+2026-09-02 23:52:32 - INFO - workflows.verbose - write_to_event_stream:86 - [init_run:0] complete with AgentInput
+2026-09-02 23:52:32 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='How does a reflex arc work?')])], current_agent_name='Agent')
+2026-09-02 23:52:32 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-02 23:52:32 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-02 23:52:32 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='You are MedLearn, a medical education assistant for indexed\ncour...
+2026-09-02 23:52:32 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-02 23:52:36 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-02 23:52:36 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_KCJC4VLpY50Qi61zorn5927W', function=Func...
+2026-09-02 23:52:36 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-02 23:52:36 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='semantic_search', tool_kwargs={'query': 'How does a reflex arc work?'}, tool_id='call_KCJC4VLpY50Qi61zorn5927W')
+2026-09-02 23:52:36 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-02 23:52:36 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-02 23:52:45 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-02 23:52:45 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='semantic_search', tool_kwargs={'query': 'How does a reflex arc work?'}, tool_id='call_KCJC4VLpY50Qi61zorn5927W', tool_output=ToolOutput(blocks=[TextBlock(block_type='text'...
+2026-09-02 23:52:45 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-02 23:52:45 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-02 23:52:45 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='How does a reflex arc work?')])], current_agent_name='Agent')
+2026-09-02 23:52:45 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-02 23:52:45 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-02 23:52:45 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='You are MedLearn, a medical education assistant for indexed\ncour...
+2026-09-02 23:52:45 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-02 23:52:54 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-02 23:52:54 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Good question — a reflex arc is a fast, automatic pathwa...
+2026-09-02 23:52:54 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-02 23:52:54 - INFO - workflows.verbose - on_tick:115 - [result] StopEvent(result=AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Good question — a reflex arc is a fast,...
+2026-09-02 23:52:54 - INFO - workflows.verbose - write_to_event_stream:86 - [parse_agent_output:0] complete with StopEvent
+2026-09-02 23:53:11 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 81b0bc069634f257b9bb435eafaf4e8e: 0.50
+2026-09-02 23:53:14 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 81b0bc069634f257b9bb435eafaf4e8e: 1.00
+2026-09-02 23:53:22 - INFO - main.routes.routes - query_rag:524 - Query completed in 50033.43 ms
+2026-09-02 23:53:26 - INFO - main.handoff.handoff_service - send_handoff_email:216 - Human handoff email sent successfully.
+2026-09-02 23:54:58 - INFO - main.routes.routes - query_rag:334 - [QUERY] Query received from user: auth0|6a47e7ae90cbbefcace365b9 (unknown)
+2026-09-02 23:54:58 - INFO - main.routes.routes - query_rag:335 - [QUERY] User role: user
+2026-09-02 23:54:58 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentWorkflowStartEvent(user_msg='Compare nociceptive and neuropathic pain', chat_history=None, memory=None, max_iterations=None, early_stopping_method=None)
+2026-09-02 23:54:58 - INFO - workflows.verbose - write_to_event_stream:78 - [init_run:0] started from AgentWorkflowStartEvent
+2026-09-02 23:54:58 - INFO - workflows.verbose - write_to_event_stream:86 - [init_run:0] complete with AgentInput
+2026-09-02 23:54:58 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Compare nociceptive and neuropathic pain')])], current_agent_name='Ag...
+2026-09-02 23:54:58 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-02 23:54:58 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-02 23:54:58 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='You are MedLearn, a medical education assistant for indexed\ncour...
+2026-09-02 23:54:58 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-02 23:55:02 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-02 23:55:02 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_WoKq5yI4NbVTTqiBxsqeM2Wy', function=Func...
+2026-09-02 23:55:02 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-02 23:55:02 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='semantic_search', tool_kwargs={}, tool_id='call_WoKq5yI4NbVTTqiBxsqeM2Wy')
+2026-09-02 23:55:02 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-02 23:55:02 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-02 23:55:11 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-02 23:55:11 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='semantic_search', tool_kwargs={}, tool_id='call_WoKq5yI4NbVTTqiBxsqeM2Wy', tool_output=ToolOutput(blocks=[TextBlock(block_type='text', text='I don’t see a specific questio...
+2026-09-02 23:55:11 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-02 23:55:11 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-02 23:55:11 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Compare nociceptive and neuropathic pain')])], current_agent_name='Ag...
+2026-09-02 23:55:11 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-02 23:55:11 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-02 23:55:11 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='You are MedLearn, a medical education assistant for indexed\ncour...
+2026-09-02 23:55:11 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-02 23:55:15 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-02 23:55:15 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_HWoTXoW6ThSCzCnIqs1p7KAO', function=Func...
+2026-09-02 23:55:15 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-02 23:55:15 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='hybrid_document_search', tool_kwargs={'query': 'nociceptive vs neuropathic pain comparison definitions mechanisms clinical features treatment examples', 'top_k': 5}, tool_id='ca...
+2026-09-02 23:55:15 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-02 23:55:15 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-02 23:55:30 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-02 23:55:30 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='hybrid_document_search', tool_kwargs={'query': 'nociceptive vs neuropathic pain comparison definitions mechanisms clinical features treatment examples', 'top_k': 5}, tool_...
+2026-09-02 23:55:30 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-02 23:55:30 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-02 23:55:30 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Compare nociceptive and neuropathic pain')])], current_agent_name='Ag...
+2026-09-02 23:55:30 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-02 23:55:30 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-02 23:55:30 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='You are MedLearn, a medical education assistant for indexed\ncour...
+2026-09-02 23:55:30 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-02 23:55:37 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-02 23:55:37 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_erNSmDy7bohbqcjcS1LgagcR', function=Func...
+2026-09-02 23:55:37 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-02 23:55:37 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='bm25_search', tool_kwargs={'query': 'neuropathic pain definition mechanisms clinical features treatment examples', 'top_k': 10}, tool_id='call_erNSmDy7bohbqcjcS1LgagcR')
+2026-09-02 23:55:37 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-02 23:55:37 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-02 23:55:54 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-02 23:55:54 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='bm25_search', tool_kwargs={'query': 'neuropathic pain definition mechanisms clinical features treatment examples', 'top_k': 10}, tool_id='call_erNSmDy7bohbqcjcS1LgagcR', t...
+2026-09-02 23:55:54 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-02 23:55:54 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-02 23:55:54 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Compare nociceptive and neuropathic pain')])], current_agent_name='Ag...
+2026-09-02 23:55:54 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-02 23:55:54 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-02 23:55:54 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='You are MedLearn, a medical education assistant for indexed\ncour...
+2026-09-02 23:55:54 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-02 23:56:05 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-02 23:56:05 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='I ran the indexed-document searches first. The sources I...
+2026-09-02 23:56:05 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-02 23:56:05 - INFO - workflows.verbose - on_tick:115 - [result] StopEvent(result=AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='I ran the indexed-document searches fir...
+2026-09-02 23:56:05 - INFO - workflows.verbose - write_to_event_stream:86 - [parse_agent_output:0] complete with StopEvent
+2026-09-02 23:56:19 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 2174f905463607725e6af93285935e1e: 0.90
+2026-09-02 23:56:22 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 2174f905463607725e6af93285935e1e: 0.50
+2026-09-02 23:56:30 - INFO - main.routes.routes - query_rag:524 - Query completed in 92587.58 ms
+2026-09-02 23:59:31 - INFO - main.app - lifespan:38 - ============================================================
+2026-09-02 23:59:31 - INFO - main.app - lifespan:39 - Shutting down MedLearn AI Assistant...
+2026-09-02 23:59:31 - INFO - main.app - lifespan:40 - ============================================================
+2026-09-02 23:59:47 - INFO - main.app - <module>:69 - CORS enabled for origins: ['http://localhost:5173', 'http://127.0.0.1:5173']
+2026-09-02 23:59:47 - INFO - main.app - <module>:72 - FastAPI app initialized with version 1.0.0
+2026-09-02 23:59:48 - INFO - main.app - lifespan:26 - ============================================================
+2026-09-02 23:59:48 - INFO - main.app - lifespan:27 - Initializing MedLearn AI Assistant Agent...
+2026-09-02 23:59:48 - INFO - main.app - lifespan:28 - ============================================================
+2026-09-02 23:59:48 - INFO - main.service.agent_service - initialize:29 - Initializing hybrid query agent service...
+2026-09-02 23:59:48 - INFO - main.service.rag_service - get_llm:201 - LLM not yet initialized, initializing services...
+2026-09-02 23:59:48 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-09-02 23:59:48 - INFO - main.service.agent_factory - create_llm:31 - Initializing Azure OpenAI LLM...
+2026-09-02 23:59:48 - INFO - main.service.agent_factory - create_embel_model:42 - Initializing Azure OpenAI Embed Model...
+2026-09-02 23:59:48 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-09-02 23:59:48 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-09-02 23:59:48 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-09-02 23:59:48 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-02 23:59:48 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medlearn_assistant...
+2026-09-02 23:59:48 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medlearn_assistant)
+2026-09-02 23:59:48 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-09-02 23:59:48 - INFO - main.service.rag_service - get_query_engine:178 - Creating new query engine with similarity_top_k=4
+2026-09-02 23:59:48 - INFO - main.service.query_engine - create_query_engine:24 - Creating query engine with similarity_top_k=4...
+2026-09-02 23:59:48 - INFO - main.service.query_engine - create_query_engine:33 - ✓ Query engine created successfully (similarity_top_k=4)
+2026-09-02 23:59:48 - INFO - main.service.rag_service - get_query_engine:182 - ✓ Query engine created and cached for similarity_top_k=4
+2026-09-02 23:59:48 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-02 23:59:48 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medlearn_assistant top_k=4 configured_retrieval=vector+bm25
+2026-09-02 23:59:48 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medlearn_assistant
+2026-09-02 23:59:48 - INFO - main.service.fusion_retrieval - _init_retrievers:91 - fusion.retrievers loaded_bm25_nodes count=0
+2026-09-02 23:59:48 - INFO - main.service.fusion_retrieval - _init_retrievers:113 - fusion.retrievers configured retrieval_type=vector vector_enabled=True bm25_enabled=False
+2026-09-02 23:59:48 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=78.1 table=medlearn_assistant top_k=4 mode=reciprocal_rerank retrieval_type=vector
+2026-09-02 23:59:48 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-02 23:59:48 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medlearn_assistant top_k=4 configured_retrieval=vector+bm25
+2026-09-02 23:59:48 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medlearn_assistant
+2026-09-02 23:59:48 - INFO - main.service.fusion_retrieval - _init_retrievers:91 - fusion.retrievers loaded_bm25_nodes count=0
+2026-09-02 23:59:48 - INFO - main.service.fusion_retrieval - _init_retrievers:113 - fusion.retrievers configured retrieval_type=vector vector_enabled=True bm25_enabled=False
+2026-09-02 23:59:48 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=72.7 table=medlearn_assistant top_k=4 mode=reciprocal_rerank retrieval_type=vector
+2026-09-02 23:59:48 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered clinical_sql tool from data_tools
+2026-09-02 23:59:48 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered semantic_search tool from data_tools
+2026-09-02 23:59:48 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered bm25_search tool from data_tools
+2026-09-02 23:59:48 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hybrid_document_search tool from data_tools
+2026-09-02 23:59:48 - INFO - main.service.mcp_client - load_tools:51 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-09-02 23:59:49 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:181 - Received session ID: 165524a3-0707-4b35-9866-8603d0d37f9d
+2026-09-02 23:59:49 - INFO - mcp.client.streamable_http - _maybe_extract_protocol_version_from_message:193 - Negotiated protocol version: 2025-11-25
+2026-09-02 23:59:49 - INFO - mcp.client.streamable_http - handle_get_stream:298 - GET stream disconnected, reconnecting in 1000ms...
+2026-09-02 23:59:49 - INFO - main.service.mcp_client - load_tools:84 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-09-02 23:59:49 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hf_whoami tool from mcp
+2026-09-02 23:59:49 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hub_repo_search tool from mcp
+2026-09-02 23:59:49 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hub_repo_details tool from mcp
+2026-09-02 23:59:49 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hf_fs tool from mcp
+2026-09-02 23:59:49 - INFO - main.service.hybrid_query_service - _register_tool:274 - Registered hf_inference tool from custom_tool
+2026-09-02 23:59:49 - INFO - main.service.agent_factory - create_llm:31 - Initializing Azure OpenAI LLM...
+2026-09-02 23:59:49 - INFO - main.service.hybrid_query_service - _create_openai_agent:314 - Creating FunctionAgent with native tool calling
+2026-09-02 23:59:49 - INFO - main.service.agent_service - initialize:35 - Hybrid agent service initialized with 9 available tools
+2026-09-02 23:59:49 - INFO - main.routes.routes - set_agent_service:183 - Agent service initialized in routes. Service: AgentService
+2026-09-02 23:59:49 - INFO - main.app - lifespan:32 - ✓ Agent ready for medical related analysis and query...
+2026-09-02 23:59:49 - INFO - main.app - lifespan:33 - ============================================================
+2026-09-03 00:01:32 - INFO - main.routes.routes - query_rag:334 - [QUERY] Query received from user: auth0|6a47e7ae90cbbefcace365b9 (unknown)
+2026-09-03 00:01:32 - INFO - main.routes.routes - query_rag:335 - [QUERY] User role: user
+2026-09-03 00:01:32 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentWorkflowStartEvent(user_msg='Compare nociceptive and neuropathic pain', chat_history=None, memory=None, max_iterations=None, early_stopping_method=None)
+2026-09-03 00:01:32 - INFO - workflows.verbose - write_to_event_stream:78 - [init_run:0] started from AgentWorkflowStartEvent
+2026-09-03 00:01:32 - INFO - workflows.verbose - write_to_event_stream:86 - [init_run:0] complete with AgentInput
+2026-09-03 00:01:32 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Compare nociceptive and neuropathic pain')])], current_agent_name='Ag...
+2026-09-03 00:01:32 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 00:01:32 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 00:01:32 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='You are MedLearn, a medical education assistant for indexed\ncour...
+2026-09-03 00:01:32 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 00:01:36 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 00:01:36 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_xKmoIhifrWNlP4xNt8SwgQ5P', function=Func...
+2026-09-03 00:01:36 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 00:01:36 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='semantic_search', tool_kwargs={}, tool_id='call_xKmoIhifrWNlP4xNt8SwgQ5P')
+2026-09-03 00:01:36 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-03 00:01:36 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-03 00:01:37 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-03 00:01:37 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='semantic_search', tool_kwargs={}, tool_id='call_xKmoIhifrWNlP4xNt8SwgQ5P', tool_output=ToolOutput(blocks=[TextBlock(block_type='text', text='Empty Response')], tool_name='...
+2026-09-03 00:01:37 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 00:01:37 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-03 00:01:37 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Compare nociceptive and neuropathic pain')])], current_agent_name='Ag...
+2026-09-03 00:01:37 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 00:01:37 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 00:01:37 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='You are MedLearn, a medical education assistant for indexed\ncour...
+2026-09-03 00:01:37 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 00:01:39 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 00:01:39 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_NG5jAHVRORDMuZvik8vqYUD7', function=Func...
+2026-09-03 00:01:39 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 00:01:39 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='hybrid_document_search', tool_kwargs={'query': 'nociceptive vs neuropathic pain comparison'}, tool_id='call_NG5jAHVRORDMuZvik8vqYUD7')
+2026-09-03 00:01:39 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-03 00:01:39 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-03 00:01:40 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-03 00:01:40 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='hybrid_document_search', tool_kwargs={'query': 'nociceptive vs neuropathic pain comparison'}, tool_id='call_NG5jAHVRORDMuZvik8vqYUD7', tool_output=ToolOutput(blocks=[TextB...
+2026-09-03 00:01:40 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 00:01:40 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-03 00:01:40 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Compare nociceptive and neuropathic pain')])], current_agent_name='Ag...
+2026-09-03 00:01:40 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 00:01:40 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 00:01:40 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='You are MedLearn, a medical education assistant for indexed\ncour...
+2026-09-03 00:01:40 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 00:01:42 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 00:01:42 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_9OLnRSpKB23esRibHbY3vFGx', function=Func...
+2026-09-03 00:01:42 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 00:01:42 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='bm25_search', tool_kwargs={'query': 'nociceptive neuropathic pain differences lecture notes'}, tool_id='call_9OLnRSpKB23esRibHbY3vFGx')
+2026-09-03 00:01:42 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-03 00:01:42 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-03 00:01:43 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-03 00:01:43 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='bm25_search', tool_kwargs={'query': 'nociceptive neuropathic pain differences lecture notes'}, tool_id='call_9OLnRSpKB23esRibHbY3vFGx', tool_output=ToolOutput(blocks=[Text...
+2026-09-03 00:01:43 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 00:01:43 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-03 00:01:43 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Compare nociceptive and neuropathic pain')])], current_agent_name='Ag...
+2026-09-03 00:01:43 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 00:01:43 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 00:01:43 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='You are MedLearn, a medical education assistant for indexed\ncour...
+2026-09-03 00:01:43 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 00:01:57 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 00:01:57 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='I searched the indexed course materials but did not retr...
+2026-09-03 00:01:57 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 00:01:57 - INFO - workflows.verbose - on_tick:115 - [result] StopEvent(result=AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='I searched the indexed course materials...
+2026-09-03 00:01:57 - INFO - workflows.verbose - write_to_event_stream:86 - [parse_agent_output:0] complete with StopEvent
+2026-09-03 00:02:07 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace d8d14945791fec69fc1cc75f3011e585: 0.00
+2026-09-03 00:02:10 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace d8d14945791fec69fc1cc75f3011e585: 1.00
+2026-09-03 00:02:18 - INFO - main.routes.routes - query_rag:524 - Query completed in 46035.94 ms
+2026-09-03 00:02:22 - INFO - main.handoff.handoff_service - send_handoff_email:216 - Human handoff email sent successfully.
+2026-09-03 00:28:44 - INFO - main.app - lifespan:38 - ============================================================
+2026-09-03 00:28:44 - INFO - main.app - lifespan:39 - Shutting down MedLearn AI Assistant...
+2026-09-03 00:28:44 - INFO - main.app - lifespan:40 - ============================================================
+2026-09-03 00:28:57 - INFO - main.app - <module>:69 - CORS enabled for origins: ['http://localhost:5173', 'http://127.0.0.1:5173']
+2026-09-03 00:28:57 - INFO - main.app - <module>:72 - FastAPI app initialized with version 1.0.0
+2026-09-03 00:28:57 - INFO - main.app - lifespan:26 - ============================================================
+2026-09-03 00:28:57 - INFO - main.app - lifespan:27 - Initializing MedLearn AI Assistant Agent...
+2026-09-03 00:28:57 - INFO - main.app - lifespan:28 - ============================================================
+2026-09-03 00:28:57 - INFO - main.service.agent_service - initialize:29 - Initializing hybrid query agent service...
+2026-09-03 00:28:57 - INFO - main.service.rag_service - get_llm:201 - LLM not yet initialized, initializing services...
+2026-09-03 00:28:57 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-09-03 00:28:57 - INFO - main.service.agent_factory - create_llm:31 - Initializing Azure OpenAI LLM...
+2026-09-03 00:28:57 - INFO - main.service.agent_factory - create_embel_model:42 - Initializing Azure OpenAI Embed Model...
+2026-09-03 00:28:57 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-09-03 00:28:57 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-09-03 00:28:57 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-09-03 00:28:57 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-03 00:28:57 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medlearn_assistant...
+2026-09-03 00:28:57 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medlearn_assistant)
+2026-09-03 00:28:57 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-09-03 00:28:57 - INFO - main.service.rag_service - get_query_engine:178 - Creating new query engine with similarity_top_k=4
+2026-09-03 00:28:57 - INFO - main.service.query_engine - create_query_engine:24 - Creating query engine with similarity_top_k=4...
+2026-09-03 00:28:57 - INFO - main.service.query_engine - create_query_engine:33 - ✓ Query engine created successfully (similarity_top_k=4)
+2026-09-03 00:28:57 - INFO - main.service.rag_service - get_query_engine:182 - ✓ Query engine created and cached for similarity_top_k=4
+2026-09-03 00:28:57 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-03 00:28:57 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medlearn_assistant top_k=4 configured_retrieval=vector+bm25
+2026-09-03 00:28:57 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medlearn_assistant
+2026-09-03 00:28:57 - INFO - main.service.fusion_retrieval - _init_retrievers:91 - fusion.retrievers loaded_bm25_nodes count=0
+2026-09-03 00:28:57 - INFO - main.service.fusion_retrieval - _init_retrievers:113 - fusion.retrievers configured retrieval_type=vector vector_enabled=True bm25_enabled=False
+2026-09-03 00:28:57 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=72.7 table=medlearn_assistant top_k=4 mode=reciprocal_rerank retrieval_type=vector
+2026-09-03 00:28:57 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-03 00:28:57 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medlearn_assistant top_k=4 configured_retrieval=vector+bm25
+2026-09-03 00:28:57 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medlearn_assistant
+2026-09-03 00:28:57 - INFO - main.service.fusion_retrieval - _init_retrievers:91 - fusion.retrievers loaded_bm25_nodes count=0
+2026-09-03 00:28:57 - INFO - main.service.fusion_retrieval - _init_retrievers:113 - fusion.retrievers configured retrieval_type=vector vector_enabled=True bm25_enabled=False
+2026-09-03 00:28:57 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=85.3 table=medlearn_assistant top_k=4 mode=reciprocal_rerank retrieval_type=vector
+2026-09-03 00:28:57 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered clinical_sql tool from data_tools
+2026-09-03 00:28:57 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered semantic_search tool from data_tools
+2026-09-03 00:28:57 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered bm25_search tool from data_tools
+2026-09-03 00:28:57 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hybrid_document_search tool from data_tools
+2026-09-03 00:28:57 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hf_inference tool from custom_tool
+2026-09-03 00:28:57 - INFO - main.service.mcp_client - load_tools:51 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-09-03 00:28:57 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:181 - Received session ID: b5817598-f98c-4824-b25a-0bdff45450d6
+2026-09-03 00:28:57 - INFO - mcp.client.streamable_http - _maybe_extract_protocol_version_from_message:193 - Negotiated protocol version: 2025-11-25
+2026-09-03 00:28:58 - INFO - mcp.client.streamable_http - handle_get_stream:298 - GET stream disconnected, reconnecting in 1000ms...
+2026-09-03 00:28:58 - INFO - main.service.mcp_client - load_tools:84 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-09-03 00:28:58 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hf_whoami tool from mcp
+2026-09-03 00:28:58 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hub_repo_search tool from mcp
+2026-09-03 00:28:58 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hub_repo_details tool from mcp
+2026-09-03 00:28:58 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hf_fs tool from mcp
+2026-09-03 00:28:58 - INFO - main.service.hybrid_query_service - initialize:310 - agent.tools.available tools=['clinical_sql', 'semantic_search', 'bm25_search', 'hybrid_document_search', 'hf_inference', 'hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs'] unavailable=[]
+2026-09-03 00:28:58 - INFO - main.service.agent_factory - create_llm:31 - Initializing Azure OpenAI LLM...
+2026-09-03 00:28:58 - INFO - main.service.hybrid_query_service - _create_openai_agent:337 - Creating FunctionAgent with native tool calling
+2026-09-03 00:28:58 - INFO - main.service.agent_service - initialize:35 - Hybrid agent service initialized with 9 available tools
+2026-09-03 00:28:58 - INFO - main.routes.routes - set_agent_service:183 - Agent service initialized in routes. Service: AgentService
+2026-09-03 00:28:58 - INFO - main.app - lifespan:32 - ✓ Agent ready for medical related analysis and query...
+2026-09-03 00:28:58 - INFO - main.app - lifespan:33 - ============================================================
+2026-09-03 00:30:42 - INFO - main.routes.routes - query_rag:334 - [QUERY] Query received from user: auth0|6a47e7ae90cbbefcace365b9 (unknown)
+2026-09-03 00:30:42 - INFO - main.routes.routes - query_rag:335 - [QUERY] User role: user
+2026-09-03 00:30:42 - INFO - main.service.hybrid_query_service - execute:346 - query.agent.received query_chars=48
+2026-09-03 00:30:42 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentWorkflowStartEvent(user_msg='Explain the somatosensory system in simple terms', chat_history=None, memory=None, max_iterations=None, early_stopping_method=None)
+2026-09-03 00:30:42 - INFO - workflows.verbose - write_to_event_stream:78 - [init_run:0] started from AgentWorkflowStartEvent
+2026-09-03 00:30:42 - INFO - workflows.verbose - write_to_event_stream:86 - [init_run:0] complete with AgentInput
+2026-09-03 00:30:42 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Explain the somatosensory system in simple terms')])], current_agent_...
+2026-09-03 00:30:42 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 00:30:42 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 00:30:42 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 00:30:42 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 00:30:54 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 00:30:54 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Goal: a simple, clear overview of how the somatosensory ...
+2026-09-03 00:30:54 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 00:30:54 - INFO - workflows.verbose - on_tick:115 - [result] StopEvent(result=AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Goal: a simple, clear overview of how t...
+2026-09-03 00:30:54 - INFO - workflows.verbose - write_to_event_stream:86 - [parse_agent_output:0] complete with StopEvent
+2026-09-03 00:30:54 - INFO - main.service.hybrid_query_service - _result:396 - query.result.collected routing=agent tools_used=[] tool_error_count=0 source_count=0
+2026-09-03 00:30:54 - WARNING - main.service.hybrid_query_service - execute:358 - Agent returned without invoking a tool; running intent-routed fallback
+2026-09-03 00:30:54 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=semantic_search mode=sync
+2026-09-03 00:30:54 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=semantic_search mode=sync
+2026-09-03 00:30:55 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=semantic_search status=success
+2026-09-03 00:30:55 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=semantic_search status=success
+2026-09-03 00:30:55 - INFO - main.service.hybrid_query_service - _result:396 - query.result.collected routing=fallback:semantic_search tools_used=['semantic_search'] tool_error_count=0 source_count=0
+2026-09-03 00:30:59 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 10f47d1eff6d09d443f99887b7d0ecd0: 1.00
+2026-09-03 00:31:01 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 10f47d1eff6d09d443f99887b7d0ecd0: 0.00
+2026-09-03 00:31:11 - INFO - main.routes.routes - query_rag:527 - Query completed in 28465.81 ms
+2026-09-03 00:31:15 - INFO - main.handoff.handoff_service - send_handoff_email:216 - Human handoff email sent successfully.
+2026-09-03 00:32:12 - INFO - main.routes.routes - upload_document:246 - [UPLOAD] Document upload initiated by user: auth0|6a47e7ae90cbbefcace365b9 (unknown)
+2026-09-03 00:32:12 - INFO - main.routes.routes - upload_document:247 - [UPLOAD] Starting document upload: medlearn.pdf
+2026-09-03 00:32:12 - INFO - main.routes.routes - upload_document:264 - [UPLOAD] File read: medlearn.pdf, Size: 135171 bytes (132.00 KB)
+2026-09-03 00:32:12 - INFO - main.routes.routes - upload_document:281 - [UPLOAD] Temporary file created: C:\Users\gunav\AppData\Local\Temp\tmpkkj2pfca.pdf
+2026-09-03 00:32:12 - INFO - main.service.rag_service - process_document:283 - Processing document (boilerplate): C:\Users\gunav\AppData\Local\Temp\tmpkkj2pfca.pdf
+2026-09-03 00:32:12 - INFO - main.service.rag_service - initialize_services:47 - Services already initialized, reusing existing instances
+2026-09-03 00:32:12 - INFO - main.service.rag_service - process_document:319 - Step 1: Loading and parsing PDF document with LlamaParse...
+2026-09-03 00:32:12 - INFO - main.service.rag_service - load_documents:243 - Loading PDF document: C:\Users\gunav\AppData\Local\Temp\tmpkkj2pfca.pdf
+2026-09-03 00:32:12 - INFO - main.service.rag_service - load_documents:251 - Initializing LlamaParse parser...
+2026-09-03 00:32:46 - INFO - main.service.rag_service - load_documents:264 - Document parsed successfully, extracted 9350 characters of text
+2026-09-03 00:32:46 - INFO - main.service.rag_service - process_document:321 - Creating semantic text chunks...
+2026-09-03 00:32:46 - INFO - main.service.rag_service - process_document:323 - Step 1.1: Creating semantic text chunks...
+2026-09-03 00:32:46 - INFO - main.service.semantic_chunking - process:45 - Processing text with semantic chunking (length: 9350 characters)
+2026-09-03 00:32:51 - INFO - main.service.semantic_chunking - process:60 - Created 4 semantic chunks from text
+2026-09-03 00:32:51 - INFO - main.service.rag_service - process_document:334 - Document loaded successfully, text length: 9350 characters
+2026-09-03 00:32:51 - INFO - main.service.rag_service - process_document:338 - Step 2: Extracting markdown tables from document...
+2026-09-03 00:32:51 - INFO - main.service.table_extraction - find_markdown_tables:26 - Extracting markdown tables (boilerplate)
+2026-09-03 00:32:51 - INFO - main.service.table_extraction - find_markdown_tables:63 - Extracted 4 markdown table(s) from document
+2026-09-03 00:32:51 - INFO - main.service.rag_service - process_document:341 - Found 4 table(s) in the document
+2026-09-03 00:32:51 - INFO - main.service.table_processing - build_nodes_from_tables:80 - Building nodes from tables (boilerplate)
+2026-09-03 00:32:51 - INFO - main.service.table_processing - build_nodes_from_tables:92 - Building nodes from 1 table(s)
+2026-09-03 00:32:51 - INFO - main.service.table_processing - summarize_table:28 - Summarizing table (boilerplate)
+2026-09-03 00:32:54 - INFO - main.service.table_processing - build_nodes_from_tables:116 - Created 1 TextNode(s) with table summaries
+2026-09-03 00:32:54 - INFO - main.service.table_processing - build_nodes_from_tables:80 - Building nodes from tables (boilerplate)
+2026-09-03 00:32:54 - INFO - main.service.table_processing - build_nodes_from_tables:92 - Building nodes from 1 table(s)
+2026-09-03 00:32:54 - INFO - main.service.table_processing - summarize_table:28 - Summarizing table (boilerplate)
+2026-09-03 00:32:58 - INFO - main.service.table_processing - build_nodes_from_tables:116 - Created 1 TextNode(s) with table summaries
+2026-09-03 00:32:58 - INFO - main.service.table_processing - build_nodes_from_tables:80 - Building nodes from tables (boilerplate)
+2026-09-03 00:32:58 - INFO - main.service.table_processing - build_nodes_from_tables:92 - Building nodes from 1 table(s)
+2026-09-03 00:32:58 - INFO - main.service.table_processing - summarize_table:28 - Summarizing table (boilerplate)
+2026-09-03 00:33:03 - INFO - main.service.table_processing - build_nodes_from_tables:116 - Created 1 TextNode(s) with table summaries
+2026-09-03 00:33:03 - INFO - main.service.table_processing - build_nodes_from_tables:80 - Building nodes from tables (boilerplate)
+2026-09-03 00:33:03 - INFO - main.service.table_processing - build_nodes_from_tables:92 - Building nodes from 1 table(s)
+2026-09-03 00:33:03 - INFO - main.service.table_processing - summarize_table:28 - Summarizing table (boilerplate)
+2026-09-03 00:33:08 - INFO - main.service.table_processing - build_nodes_from_tables:116 - Created 1 TextNode(s) with table summaries
+2026-09-03 00:33:08 - INFO - main.service.rag_service - process_document:364 - Step 3: Extracting images from PDF...
+2026-09-03 00:33:08 - INFO - main.service.image_extraction - extract_images_from_pdf:30 - Extracting images from PDF: C:\Users\gunav\AppData\Local\Temp\tmpkkj2pfca.pdf
+2026-09-03 00:33:08 - INFO - main.service.image_extraction - extract_images_from_pdf:31 - Output directory: C:\Users\gunav\AppData\Local\Temp\tmpzhd_7ep0
+2026-09-03 00:33:08 - INFO - main.service.image_extraction - extract_images_from_pdf:42 - Opening PDF file: C:\Users\gunav\AppData\Local\Temp\tmpkkj2pfca.pdf
+2026-09-03 00:33:08 - INFO - main.service.image_extraction - extract_images_from_pdf:45 - PDF opened successfully, total pages: 4
+2026-09-03 00:33:08 - INFO - main.service.image_extraction - extract_images_from_pdf:58 - Found 1 image(s) on page 2
+2026-09-03 00:33:08 - INFO - main.service.image_extraction - extract_images_from_pdf:84 - Image extraction completed: 1 images extracted from 4 pages
+2026-09-03 00:33:08 - INFO - main.service.rag_service - process_document:372 - Extracted 1 images from PDF
+2026-09-03 00:33:08 - INFO - main.service.captioning - generate_caption:29 - Generating caption for image: C:\Users\gunav\AppData\Local\Temp\tmpzhd_7ep0\extracted_image_page1_img0.jpeg
+2026-09-03 00:33:09 - INFO - main.service.captioning - generate_caption:92 - Calling Azure OpenAI vision API for caption generation (deployment: gpt-5-mini)
+2026-09-03 00:33:14 - INFO - main.service.captioning - generate_caption:113 - Caption generated successfully (length: 396 characters): Diagram of a muscle spindle and spinal stretch reflex showing intrafusal vs extrafusal fibers, Ia/II...
+2026-09-03 00:33:14 - INFO - main.service.rag_service - process_document:409 - Total nodes created: 9 (text: 4, tables: 4, images: 1)
+2026-09-03 00:33:14 - INFO - main.service.rag_service - process_document:412 - Step 5: Creating PostgreSQL vector store and indexing documents...
+2026-09-03 00:33:14 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-03 00:33:14 - INFO - main.service.rag_service - process_document:426 - Inserting 9 nodes into PGVector...
+2026-09-03 00:33:16 - INFO - main.service.rag_service - process_document:429 - Nodes inserted successfully.
+2026-09-03 00:33:16 - INFO - main.service.rag_service - process_document:430 - Document processing completed successfully
+2026-09-03 00:33:16 - INFO - main.routes.routes - upload_document:291 - [UPLOAD] Document processed successfully: 9 document(s) indexed from medlearn.pdf
+2026-09-03 00:34:16 - INFO - main.routes.routes - query_rag:334 - [QUERY] Query received from user: auth0|6a47e7ae90cbbefcace365b9 (unknown)
+2026-09-03 00:34:16 - INFO - main.routes.routes - query_rag:335 - [QUERY] User role: user
+2026-09-03 00:34:16 - INFO - main.service.hybrid_query_service - execute:346 - query.agent.received query_chars=48
+2026-09-03 00:34:16 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentWorkflowStartEvent(user_msg='Explain the somatosensory system in simple terms', chat_history=None, memory=None, max_iterations=None, early_stopping_method=None)
+2026-09-03 00:34:16 - INFO - workflows.verbose - write_to_event_stream:78 - [init_run:0] started from AgentWorkflowStartEvent
+2026-09-03 00:34:16 - INFO - workflows.verbose - write_to_event_stream:86 - [init_run:0] complete with AgentInput
+2026-09-03 00:34:16 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Explain the somatosensory system in simple terms')])], current_agent_...
+2026-09-03 00:34:16 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 00:34:16 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 00:34:16 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 00:34:16 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 00:34:26 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 00:34:26 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Here’s a simple, clear explanation of the somatosensory ...
+2026-09-03 00:34:26 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 00:34:26 - INFO - workflows.verbose - on_tick:115 - [result] StopEvent(result=AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Here’s a simple, clear explanation of t...
+2026-09-03 00:34:26 - INFO - workflows.verbose - write_to_event_stream:86 - [parse_agent_output:0] complete with StopEvent
+2026-09-03 00:34:26 - INFO - main.service.hybrid_query_service - _result:396 - query.result.collected routing=agent tools_used=[] tool_error_count=0 source_count=0
+2026-09-03 00:34:26 - WARNING - main.service.hybrid_query_service - execute:358 - Agent returned without invoking a tool; running intent-routed fallback
+2026-09-03 00:34:26 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=semantic_search mode=sync
+2026-09-03 00:34:26 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=semantic_search mode=sync
+2026-09-03 00:34:37 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=semantic_search status=success
+2026-09-03 00:34:37 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=semantic_search status=success
+2026-09-03 00:34:37 - INFO - main.service.hybrid_query_service - _result:396 - query.result.collected routing=fallback:semantic_search tools_used=['semantic_search'] tool_error_count=0 source_count=4
+2026-09-03 00:34:57 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace b56d7876d88a76f19f12d2c2e3d83d5c: 0.90
+2026-09-03 00:35:01 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace b56d7876d88a76f19f12d2c2e3d83d5c: 1.00
+2026-09-03 00:35:09 - INFO - main.routes.routes - query_rag:527 - Query completed in 53082.65 ms
+2026-09-03 00:38:11 - INFO - main.routes.routes - query_rag:334 - [QUERY] Query received from user: auth0|6a47e7ae90cbbefcace365b9 (unknown)
+2026-09-03 00:38:11 - INFO - main.routes.routes - query_rag:335 - [QUERY] User role: user
+2026-09-03 00:38:11 - INFO - main.service.hybrid_query_service - execute:346 - query.agent.received query_chars=117
+2026-09-03 00:38:11 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentWorkflowStartEvent(user_msg='What is the precise innervation density of Merkel’...', chat_history=None, memory=None, max_iterations=None, early_stopping_method=None)
+2026-09-03 00:38:11 - INFO - workflows.verbose - write_to_event_stream:78 - [init_run:0] started from AgentWorkflowStartEvent
+2026-09-03 00:38:11 - INFO - workflows.verbose - write_to_event_stream:86 - [init_run:0] complete with AgentInput
+2026-09-03 00:38:11 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='What is the precise innervation density of Merkel’s receptors per squ...
+2026-09-03 00:38:11 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 00:38:11 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 00:38:11 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 00:38:11 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 00:38:16 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 00:38:16 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_yF280tytGh0SJHqWVmP5P1As', function=Func...
+2026-09-03 00:38:16 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 00:38:16 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='hybrid_document_search', tool_kwargs={'query': 'Merkel receptor innervation density per mm^2 human digits age 50 Merkel cell-neurite complex density fingertips 50 years', 'k': 1...
+2026-09-03 00:38:16 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-03 00:38:16 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-03 00:38:16 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=hybrid_document_search mode=sync
+2026-09-03 00:38:16 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='bm25_search', tool_kwargs={'query': 'Merkel receptors density per square millimeter human finger digits 50 years innervation density Merkel cells Merkel nerve endings', 'k': 10}...
+2026-09-03 00:38:16 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=hybrid_document_search mode=sync
+2026-09-03 00:38:16 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:1] started from ToolCall
+2026-09-03 00:38:16 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=bm25_search mode=sync
+2026-09-03 00:38:16 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=bm25_search mode=sync
+2026-09-03 00:38:23 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=hybrid_document_search status=success
+2026-09-03 00:38:23 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=hybrid_document_search status=success
+2026-09-03 00:38:23 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-03 00:38:23 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='hybrid_document_search', tool_kwargs={'query': 'Merkel receptor innervation density per mm^2 human digits age 50 Merkel cell-neurite complex density fingertips 50 years', ...
+2026-09-03 00:38:23 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 00:38:23 - INFO - workflows.verbose - write_to_event_stream:88 - [aggregate_tool_results:0] complete with no result
+2026-09-03 00:38:24 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=bm25_search status=success
+2026-09-03 00:38:24 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=bm25_search status=success
+2026-09-03 00:38:24 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:1] complete with ToolCallResult
+2026-09-03 00:38:24 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='bm25_search', tool_kwargs={'query': 'Merkel receptors density per square millimeter human finger digits 50 years innervation density Merkel cells Merkel nerve endings', 'k...
+2026-09-03 00:38:24 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 00:38:24 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-03 00:38:24 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='What is the precise innervation density of Merkel’s receptors per squ...
+2026-09-03 00:38:24 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 00:38:24 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 00:38:24 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 00:38:24 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 00:38:30 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 00:38:30 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_3p23V8aLC54Iay0WU0KwEQcV', function=Func...
+2026-09-03 00:38:30 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 00:38:30 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='hybrid_document_search', tool_kwargs={'query': 'Merkel cell density fingertips per mm2 human age 50 study "Merkel cells" "density" "age"', 'k': 10}, tool_id='call_3p23V8aLC54Iay...
+2026-09-03 00:38:30 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-03 00:38:30 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-03 00:38:30 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=hybrid_document_search mode=sync
+2026-09-03 00:38:30 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='bm25_search', tool_kwargs={'query': "Merkel receptors density per mm2 fingertips 'age-related' '50 years' 'human' Merkel cell neurite complex density study", 'k': 10}, tool_id='...
+2026-09-03 00:38:30 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=hybrid_document_search mode=sync
+2026-09-03 00:38:30 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:1] started from ToolCall
+2026-09-03 00:38:30 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=bm25_search mode=sync
+2026-09-03 00:38:30 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=bm25_search mode=sync
+2026-09-03 00:38:36 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=hybrid_document_search status=success
+2026-09-03 00:38:36 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=hybrid_document_search status=success
+2026-09-03 00:38:36 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-03 00:38:36 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='hybrid_document_search', tool_kwargs={'query': 'Merkel cell density fingertips per mm2 human age 50 study "Merkel cells" "density" "age"', 'k': 10}, tool_id='call_3p23V8aL...
+2026-09-03 00:38:36 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 00:38:36 - INFO - workflows.verbose - write_to_event_stream:88 - [aggregate_tool_results:0] complete with no result
+2026-09-03 00:38:37 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=bm25_search status=success
+2026-09-03 00:38:37 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=bm25_search status=success
+2026-09-03 00:38:37 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:1] complete with ToolCallResult
+2026-09-03 00:38:37 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='bm25_search', tool_kwargs={'query': "Merkel receptors density per mm2 fingertips 'age-related' '50 years' 'human' Merkel cell neurite complex density study", 'k': 10}, too...
+2026-09-03 00:38:37 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 00:38:37 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-03 00:38:37 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='What is the precise innervation density of Merkel’s receptors per squ...
+2026-09-03 00:38:37 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 00:38:37 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 00:38:37 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 00:38:37 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 00:38:49 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 00:38:49 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Short answer: the best available estimate is about 10 Me...
+2026-09-03 00:38:49 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 00:38:49 - INFO - workflows.verbose - on_tick:115 - [result] StopEvent(result=AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Short answer: the best available estima...
+2026-09-03 00:38:49 - INFO - workflows.verbose - write_to_event_stream:86 - [parse_agent_output:0] complete with StopEvent
+2026-09-03 00:38:49 - INFO - main.service.hybrid_query_service - _result:396 - query.result.collected routing=agent:hybrid_document_search+bm25_search tools_used=['hybrid_document_search', 'bm25_search'] tool_error_count=0 source_count=16
+2026-09-03 00:38:49 - INFO - main.service.hybrid_query_service - execute:360 - query.synthesis.completed routing=agent tools_used=['hybrid_document_search', 'bm25_search']
+2026-09-03 00:39:03 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 44986cc8c7414b20bdd5b1d3fd2e16bf: 0.85
+2026-09-03 00:39:07 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 44986cc8c7414b20bdd5b1d3fd2e16bf: 1.00
+2026-09-03 00:39:16 - INFO - main.routes.routes - query_rag:527 - Query completed in 65133.71 ms
+2026-09-03 00:39:21 - INFO - main.handoff.handoff_service - send_handoff_email:216 - Human handoff email sent successfully.
+2026-09-03 00:42:32 - INFO - main.routes.routes - query_rag:334 - [QUERY] Query received from user: auth0|6a47e7ae90cbbefcace365b9 (unknown)
+2026-09-03 00:42:32 - INFO - main.routes.routes - query_rag:335 - [QUERY] User role: user
+2026-09-03 00:42:32 - INFO - main.service.hybrid_query_service - execute:346 - query.agent.received query_chars=117
+2026-09-03 00:42:32 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentWorkflowStartEvent(user_msg='What is the precise innervation density of Merkel’...', chat_history=None, memory=None, max_iterations=None, early_stopping_method=None)
+2026-09-03 00:42:32 - INFO - workflows.verbose - write_to_event_stream:78 - [init_run:0] started from AgentWorkflowStartEvent
+2026-09-03 00:42:32 - INFO - workflows.verbose - write_to_event_stream:86 - [init_run:0] complete with AgentInput
+2026-09-03 00:42:32 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='What is the precise innervation density of Merkel’s receptors per squ...
+2026-09-03 00:42:32 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 00:42:32 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 00:42:32 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 00:42:32 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 00:42:36 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 00:42:36 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_NorHx9tZDf0hBkP2pPlbIRuU', function=Func...
+2026-09-03 00:42:36 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 00:42:36 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='hybrid_document_search', tool_kwargs={'query': "Merkel receptor innervation density human digits per mm2 at age 50 Merkel cells innervation density digits age 50 Merkel's recept...
+2026-09-03 00:42:36 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-03 00:42:36 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-03 00:42:36 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=hybrid_document_search mode=sync
+2026-09-03 00:42:36 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=hybrid_document_search mode=sync
+2026-09-03 00:42:42 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=hybrid_document_search status=success
+2026-09-03 00:42:42 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=hybrid_document_search status=success
+2026-09-03 00:42:42 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-03 00:42:42 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='hybrid_document_search', tool_kwargs={'query': "Merkel receptor innervation density human digits per mm2 at age 50 Merkel cells innervation density digits age 50 Merkel's ...
+2026-09-03 00:42:42 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 00:42:42 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-03 00:42:42 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='What is the precise innervation density of Merkel’s receptors per squ...
+2026-09-03 00:42:42 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 00:42:42 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 00:42:42 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 00:42:42 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 00:42:47 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 00:42:47 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_W2f8OC8XWYMbHO2QscI25g2y', function=Func...
+2026-09-03 00:42:47 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 00:42:47 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='semantic_search', tool_kwargs={'query': "Merkel receptor density per mm2 human fingertip aging 50 years Merkel cell innervation density study 'Merkel receptors' 'innervation den...
+2026-09-03 00:42:47 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-03 00:42:47 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=semantic_search mode=sync
+2026-09-03 00:42:47 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-03 00:42:47 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=semantic_search mode=sync
+2026-09-03 00:42:54 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=semantic_search status=success
+2026-09-03 00:42:54 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=semantic_search status=success
+2026-09-03 00:42:54 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-03 00:42:54 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='semantic_search', tool_kwargs={'query': "Merkel receptor density per mm2 human fingertip aging 50 years Merkel cell innervation density study 'Merkel receptors' 'innervati...
+2026-09-03 00:42:54 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 00:42:54 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-03 00:42:54 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='What is the precise innervation density of Merkel’s receptors per squ...
+2026-09-03 00:42:54 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 00:42:54 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 00:42:54 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 00:42:54 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 00:43:01 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 00:43:01 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Short answer: there is no single universally “precise” v...
+2026-09-03 00:43:01 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 00:43:01 - INFO - workflows.verbose - on_tick:115 - [result] StopEvent(result=AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Short answer: there is no single univer...
+2026-09-03 00:43:01 - INFO - workflows.verbose - write_to_event_stream:86 - [parse_agent_output:0] complete with StopEvent
+2026-09-03 00:43:01 - INFO - main.service.hybrid_query_service - _result:396 - query.result.collected routing=agent:hybrid_document_search+semantic_search tools_used=['hybrid_document_search', 'semantic_search'] tool_error_count=0 source_count=8
+2026-09-03 00:43:01 - INFO - main.service.hybrid_query_service - execute:360 - query.synthesis.completed routing=agent tools_used=['hybrid_document_search', 'semantic_search']
+2026-09-03 00:43:13 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace d3e79d53591bcce93bf4b2202e901c37: 0.80
+2026-09-03 00:43:18 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace d3e79d53591bcce93bf4b2202e901c37: 0.90
+2026-09-03 00:43:28 - INFO - main.routes.routes - query_rag:527 - Query completed in 55816.94 ms
+2026-09-03 00:43:31 - INFO - main.handoff.handoff_service - send_handoff_email:216 - Human handoff email sent successfully.
+2026-09-03 00:45:42 - INFO - main.routes.routes - query_rag:334 - [QUERY] Query received from user: auth0|6a47e7ae90cbbefcace365b9 (unknown)
+2026-09-03 00:45:42 - INFO - main.routes.routes - query_rag:335 - [QUERY] User role: user
+2026-09-03 00:45:42 - INFO - main.service.hybrid_query_service - execute:346 - query.agent.received query_chars=40
+2026-09-03 00:45:42 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentWorkflowStartEvent(user_msg='Compare nociceptive and neuropathic pain', chat_history=None, memory=None, max_iterations=None, early_stopping_method=None)
+2026-09-03 00:45:42 - INFO - workflows.verbose - write_to_event_stream:78 - [init_run:0] started from AgentWorkflowStartEvent
+2026-09-03 00:45:42 - INFO - workflows.verbose - write_to_event_stream:86 - [init_run:0] complete with AgentInput
+2026-09-03 00:45:42 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Compare nociceptive and neuropathic pain')])], current_agent_name='Ag...
+2026-09-03 00:45:42 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 00:45:42 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 00:45:42 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 00:45:42 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 00:45:58 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 00:45:58 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Goal: concise, clinically useful comparison of nocicepti...
+2026-09-03 00:45:58 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 00:45:58 - INFO - workflows.verbose - on_tick:115 - [result] StopEvent(result=AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Goal: concise, clinically useful compar...
+2026-09-03 00:45:58 - INFO - workflows.verbose - write_to_event_stream:86 - [parse_agent_output:0] complete with StopEvent
+2026-09-03 00:45:58 - INFO - main.service.hybrid_query_service - _result:396 - query.result.collected routing=agent tools_used=[] tool_error_count=0 source_count=0
+2026-09-03 00:45:58 - WARNING - main.service.hybrid_query_service - execute:358 - Agent returned without invoking a tool; running intent-routed fallback
+2026-09-03 00:45:58 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=hybrid_document_search mode=sync
+2026-09-03 00:45:58 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=hybrid_document_search mode=sync
+2026-09-03 00:46:10 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=hybrid_document_search status=success
+2026-09-03 00:46:10 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=hybrid_document_search status=success
+2026-09-03 00:46:10 - INFO - main.service.hybrid_query_service - _result:396 - query.result.collected routing=fallback:hybrid_document_search tools_used=['hybrid_document_search'] tool_error_count=0 source_count=4
+2026-09-03 00:46:25 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 4543d465ddde63f4a61ff2b5272b7002: 1.00
+2026-09-03 00:46:28 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 4543d465ddde63f4a61ff2b5272b7002: 0.50
+2026-09-03 00:46:38 - INFO - main.routes.routes - query_rag:527 - Query completed in 55431.69 ms
+2026-09-03 00:59:30 - INFO - main.app - lifespan:38 - ============================================================
+2026-09-03 00:59:30 - INFO - main.app - lifespan:39 - Shutting down MedLearn AI Assistant...
+2026-09-03 00:59:30 - INFO - main.app - lifespan:40 - ============================================================
+2026-09-03 00:59:54 - INFO - main.app - <module>:69 - CORS enabled for origins: ['http://localhost:5173', 'http://127.0.0.1:5173']
+2026-09-03 00:59:54 - INFO - main.app - <module>:72 - FastAPI app initialized with version 1.0.0
+2026-09-03 00:59:54 - INFO - main.app - lifespan:26 - ============================================================
+2026-09-03 00:59:54 - INFO - main.app - lifespan:27 - Initializing MedLearn AI Assistant Agent...
+2026-09-03 00:59:54 - INFO - main.app - lifespan:28 - ============================================================
+2026-09-03 00:59:54 - INFO - main.service.agent_service - initialize:29 - Initializing hybrid query agent service...
+2026-09-03 00:59:54 - INFO - main.service.rag_service - get_llm:201 - LLM not yet initialized, initializing services...
+2026-09-03 00:59:54 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-09-03 00:59:54 - INFO - main.service.agent_factory - create_llm:31 - Initializing Azure OpenAI LLM...
+2026-09-03 00:59:55 - INFO - main.service.agent_factory - create_embel_model:42 - Initializing Azure OpenAI Embed Model...
+2026-09-03 00:59:55 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-09-03 00:59:55 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-09-03 00:59:55 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-09-03 00:59:55 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-03 00:59:55 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medlearn_assistant...
+2026-09-03 00:59:55 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medlearn_assistant)
+2026-09-03 00:59:55 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-09-03 00:59:55 - INFO - main.service.rag_service - get_query_engine:178 - Creating new query engine with similarity_top_k=4
+2026-09-03 00:59:55 - INFO - main.service.query_engine - create_query_engine:24 - Creating query engine with similarity_top_k=4...
+2026-09-03 00:59:55 - INFO - main.service.query_engine - create_query_engine:33 - ✓ Query engine created successfully (similarity_top_k=4)
+2026-09-03 00:59:55 - INFO - main.service.rag_service - get_query_engine:182 - ✓ Query engine created and cached for similarity_top_k=4
+2026-09-03 00:59:55 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-03 00:59:55 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medlearn_assistant top_k=4 configured_retrieval=vector+bm25
+2026-09-03 00:59:55 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medlearn_assistant
+2026-09-03 00:59:55 - INFO - main.service.fusion_retrieval - _init_retrievers:91 - fusion.retrievers loaded_bm25_nodes count=9
+2026-09-03 00:59:55 - INFO - main.service.fusion_retrieval - _init_retrievers:113 - fusion.retrievers configured retrieval_type=hybrid(vector+bm25) vector_enabled=True bm25_enabled=True
+2026-09-03 00:59:55 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=159.1 table=medlearn_assistant top_k=4 mode=reciprocal_rerank retrieval_type=hybrid(vector+bm25)
+2026-09-03 00:59:55 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-03 00:59:55 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medlearn_assistant top_k=4 configured_retrieval=vector+bm25
+2026-09-03 00:59:55 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medlearn_assistant
+2026-09-03 00:59:55 - INFO - main.service.fusion_retrieval - _init_retrievers:91 - fusion.retrievers loaded_bm25_nodes count=9
+2026-09-03 00:59:55 - INFO - main.service.fusion_retrieval - _init_retrievers:113 - fusion.retrievers configured retrieval_type=hybrid(vector+bm25) vector_enabled=True bm25_enabled=True
+2026-09-03 00:59:55 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=131.3 table=medlearn_assistant top_k=4 mode=reciprocal_rerank retrieval_type=hybrid(vector+bm25)
+2026-09-03 00:59:55 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered clinical_sql tool from data_tools
+2026-09-03 00:59:55 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered semantic_search tool from data_tools
+2026-09-03 00:59:55 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered bm25_search tool from data_tools
+2026-09-03 00:59:55 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hybrid_document_search tool from data_tools
+2026-09-03 00:59:55 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hf_inference tool from custom_tool
+2026-09-03 00:59:55 - INFO - main.service.mcp_client - load_tools:51 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-09-03 00:59:56 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:181 - Received session ID: 638a9649-788e-44d3-9a55-1db153dee9c3
+2026-09-03 00:59:56 - INFO - mcp.client.streamable_http - _maybe_extract_protocol_version_from_message:193 - Negotiated protocol version: 2025-11-25
+2026-09-03 00:59:56 - INFO - mcp.client.streamable_http - handle_get_stream:298 - GET stream disconnected, reconnecting in 1000ms...
+2026-09-03 00:59:57 - INFO - main.service.mcp_client - load_tools:84 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-09-03 00:59:57 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hf_whoami tool from mcp
+2026-09-03 00:59:57 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hub_repo_search tool from mcp
+2026-09-03 00:59:57 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hub_repo_details tool from mcp
+2026-09-03 00:59:57 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hf_fs tool from mcp
+2026-09-03 00:59:57 - INFO - main.service.hybrid_query_service - initialize:310 - agent.tools.available tools=['clinical_sql', 'semantic_search', 'bm25_search', 'hybrid_document_search', 'hf_inference', 'hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs'] unavailable=[]
+2026-09-03 00:59:57 - INFO - main.service.agent_factory - create_llm:31 - Initializing Azure OpenAI LLM...
+2026-09-03 00:59:57 - INFO - main.service.hybrid_query_service - _create_openai_agent:337 - Creating FunctionAgent with native tool calling
+2026-09-03 00:59:57 - INFO - main.service.agent_service - initialize:35 - Hybrid agent service initialized with 9 available tools
+2026-09-03 00:59:57 - INFO - main.routes.routes - set_agent_service:183 - Agent service initialized in routes. Service: AgentService
+2026-09-03 00:59:57 - INFO - main.app - lifespan:32 - ✓ Agent ready for medical related analysis and query...
+2026-09-03 00:59:57 - INFO - main.app - lifespan:33 - ============================================================
+2026-09-03 01:01:40 - INFO - main.routes.routes - query_rag:334 - [QUERY] Query received from user: auth0|6a47e7ae90cbbefcace365b9 (unknown)
+2026-09-03 01:01:40 - INFO - main.routes.routes - query_rag:335 - [QUERY] User role: user
+2026-09-03 01:01:40 - INFO - main.service.hybrid_query_service - execute:346 - query.agent.received query_chars=117
+2026-09-03 01:01:40 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentWorkflowStartEvent(user_msg='What is the precise innervation density of Merkel’...', chat_history=None, memory=None, max_iterations=None, early_stopping_method=None)
+2026-09-03 01:01:40 - INFO - workflows.verbose - write_to_event_stream:78 - [init_run:0] started from AgentWorkflowStartEvent
+2026-09-03 01:01:40 - INFO - workflows.verbose - write_to_event_stream:86 - [init_run:0] complete with AgentInput
+2026-09-03 01:01:40 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='What is the precise innervation density of Merkel’s receptors per squ...
+2026-09-03 01:01:40 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 01:01:40 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 01:01:40 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 01:01:40 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 01:01:47 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 01:01:47 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_dPGw0N4BjMvftLxManX5wTmJ', function=Func...
+2026-09-03 01:01:47 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 01:01:47 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='hybrid_document_search', tool_kwargs={'query': 'Merkel receptor innervation density per mm2 human digits age 50 Merkel cell neurite complexes density human fingertips age 50 inn...
+2026-09-03 01:01:47 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-03 01:01:47 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-03 01:01:47 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=hybrid_document_search mode=sync
+2026-09-03 01:01:47 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=hybrid_document_search mode=sync
+2026-09-03 01:01:52 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=hybrid_document_search status=success
+2026-09-03 01:01:52 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=hybrid_document_search status=success
+2026-09-03 01:01:52 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-03 01:01:52 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='hybrid_document_search', tool_kwargs={'query': 'Merkel receptor innervation density per mm2 human digits age 50 Merkel cell neurite complexes density human fingertips age ...
+2026-09-03 01:01:52 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 01:01:52 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-03 01:01:52 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='What is the precise innervation density of Merkel’s receptors per squ...
+2026-09-03 01:01:52 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 01:01:52 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 01:01:52 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 01:01:52 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 01:01:57 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 01:01:57 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_JCiO3O8RO5djLwRQ1qWdbvxW', function=Func...
+2026-09-03 01:01:57 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 01:01:57 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='bm25_search', tool_kwargs={'query': 'Merkel receptor density human fingertip per mm^2 age 50 Merkel cell neurite complex density age-related decline', 'top_k': 10}, tool_id='cal...
+2026-09-03 01:01:57 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-03 01:01:57 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-03 01:01:57 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=bm25_search mode=sync
+2026-09-03 01:01:57 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='semantic_search', tool_kwargs={'query': "density of Merkel cells per square millimeter human digit thumb index finger age 50 'Merkel cell-neurite complex' density 'per mm2'", 't...
+2026-09-03 01:01:57 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=bm25_search mode=sync
+2026-09-03 01:01:57 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:1] started from ToolCall
+2026-09-03 01:01:57 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=semantic_search mode=sync
+2026-09-03 01:01:57 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=semantic_search mode=sync
+2026-09-03 01:02:01 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=bm25_search status=success
+2026-09-03 01:02:01 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=bm25_search status=success
+2026-09-03 01:02:01 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-03 01:02:01 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='bm25_search', tool_kwargs={'query': 'Merkel receptor density human fingertip per mm^2 age 50 Merkel cell neurite complex density age-related decline', 'top_k': 10}, tool_i...
+2026-09-03 01:02:01 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 01:02:01 - INFO - workflows.verbose - write_to_event_stream:88 - [aggregate_tool_results:0] complete with no result
+2026-09-03 01:02:04 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=semantic_search status=success
+2026-09-03 01:02:04 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=semantic_search status=success
+2026-09-03 01:02:04 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:1] complete with ToolCallResult
+2026-09-03 01:02:04 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='semantic_search', tool_kwargs={'query': "density of Merkel cells per square millimeter human digit thumb index finger age 50 'Merkel cell-neurite complex' density 'per mm2...
+2026-09-03 01:02:04 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 01:02:04 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-03 01:02:04 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='What is the precise innervation density of Merkel’s receptors per squ...
+2026-09-03 01:02:04 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 01:02:04 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 01:02:04 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 01:02:04 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 01:02:11 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 01:02:11 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Short answer: about 10 Merkel cell–neurite complexes (Me...
+2026-09-03 01:02:11 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 01:02:11 - INFO - workflows.verbose - on_tick:115 - [result] StopEvent(result=AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Short answer: about 10 Merkel cell–neur...
+2026-09-03 01:02:11 - INFO - workflows.verbose - write_to_event_stream:86 - [parse_agent_output:0] complete with StopEvent
+2026-09-03 01:02:11 - INFO - main.service.hybrid_query_service - _result:396 - query.result.collected routing=agent:hybrid_document_search+bm25_search+semantic_search tools_used=['hybrid_document_search', 'bm25_search', 'semantic_search'] tool_error_count=0 source_count=12
+2026-09-03 01:02:11 - INFO - main.service.hybrid_query_service - execute:360 - query.synthesis.completed routing=agent tools_used=['hybrid_document_search', 'bm25_search', 'semantic_search']
+2026-09-03 01:02:23 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 4502ad59033d63eb6717f982aeb673dc: 0.90
+2026-09-03 01:02:28 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 4502ad59033d63eb6717f982aeb673dc: 0.90
+2026-09-03 01:02:28 - INFO - main.handoff.handoff_service - evaluate_confidence_score:71 - Starting confidence evaluation (answer_chars=966, threshold=40)
+2026-09-03 01:02:34 - INFO - main.handoff.handoff_service - evaluate_confidence_score:92 - Confidence evaluation completed (score=40, trigger=False)
+2026-09-03 01:02:36 - INFO - main.routes.routes - query_rag:527 - Query completed in 56833.87 ms
+2026-09-03 01:02:40 - INFO - main.handoff.handoff_service - send_handoff_email:227 - Human handoff email sent successfully.
+2026-09-03 01:07:39 - INFO - main.app - lifespan:38 - ============================================================
+2026-09-03 01:07:39 - INFO - main.app - lifespan:39 - Shutting down MedLearn AI Assistant...
+2026-09-03 01:07:39 - INFO - main.app - lifespan:40 - ============================================================
+2026-09-03 01:07:58 - INFO - main.app - <module>:69 - CORS enabled for origins: ['http://localhost:5173', 'http://127.0.0.1:5173']
+2026-09-03 01:07:58 - INFO - main.app - <module>:72 - FastAPI app initialized with version 1.0.0
+2026-09-03 01:07:58 - INFO - main.app - lifespan:26 - ============================================================
+2026-09-03 01:07:58 - INFO - main.app - lifespan:27 - Initializing MedLearn AI Assistant Agent...
+2026-09-03 01:07:58 - INFO - main.app - lifespan:28 - ============================================================
+2026-09-03 01:07:58 - INFO - main.service.agent_service - initialize:29 - Initializing hybrid query agent service...
+2026-09-03 01:07:58 - INFO - main.service.rag_service - get_llm:201 - LLM not yet initialized, initializing services...
+2026-09-03 01:07:58 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-09-03 01:07:58 - INFO - main.service.agent_factory - create_llm:31 - Initializing Azure OpenAI LLM...
+2026-09-03 01:07:58 - INFO - main.service.agent_factory - create_embel_model:42 - Initializing Azure OpenAI Embed Model...
+2026-09-03 01:07:58 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-09-03 01:07:58 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-09-03 01:07:58 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-09-03 01:07:58 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-03 01:07:58 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medlearn_assistant...
+2026-09-03 01:07:58 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medlearn_assistant)
+2026-09-03 01:07:58 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-09-03 01:07:58 - INFO - main.service.rag_service - get_query_engine:178 - Creating new query engine with similarity_top_k=4
+2026-09-03 01:07:58 - INFO - main.service.query_engine - create_query_engine:24 - Creating query engine with similarity_top_k=4...
+2026-09-03 01:07:58 - INFO - main.service.query_engine - create_query_engine:33 - ✓ Query engine created successfully (similarity_top_k=4)
+2026-09-03 01:07:58 - INFO - main.service.rag_service - get_query_engine:182 - ✓ Query engine created and cached for similarity_top_k=4
+2026-09-03 01:07:58 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-03 01:07:58 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medlearn_assistant top_k=4 configured_retrieval=vector+bm25
+2026-09-03 01:07:58 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medlearn_assistant
+2026-09-03 01:07:59 - INFO - main.service.fusion_retrieval - _init_retrievers:91 - fusion.retrievers loaded_bm25_nodes count=9
+2026-09-03 01:07:59 - INFO - main.service.fusion_retrieval - _init_retrievers:113 - fusion.retrievers configured retrieval_type=hybrid(vector+bm25) vector_enabled=True bm25_enabled=True
+2026-09-03 01:07:59 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=101.5 table=medlearn_assistant top_k=4 mode=reciprocal_rerank retrieval_type=hybrid(vector+bm25)
+2026-09-03 01:07:59 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medlearn_assistant
+2026-09-03 01:07:59 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medlearn_assistant top_k=4 configured_retrieval=vector+bm25
+2026-09-03 01:07:59 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medlearn_assistant
+2026-09-03 01:07:59 - INFO - main.service.fusion_retrieval - _init_retrievers:91 - fusion.retrievers loaded_bm25_nodes count=9
+2026-09-03 01:07:59 - INFO - main.service.fusion_retrieval - _init_retrievers:113 - fusion.retrievers configured retrieval_type=hybrid(vector+bm25) vector_enabled=True bm25_enabled=True
+2026-09-03 01:07:59 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=87.6 table=medlearn_assistant top_k=4 mode=reciprocal_rerank retrieval_type=hybrid(vector+bm25)
+2026-09-03 01:07:59 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered clinical_sql tool from data_tools
+2026-09-03 01:07:59 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered semantic_search tool from data_tools
+2026-09-03 01:07:59 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered bm25_search tool from data_tools
+2026-09-03 01:07:59 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hybrid_document_search tool from data_tools
+2026-09-03 01:07:59 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hf_inference tool from custom_tool
+2026-09-03 01:07:59 - INFO - main.service.mcp_client - load_tools:51 - Connecting to MCP Server at https://huggingface.co/mcp...
+2026-09-03 01:07:59 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:181 - Received session ID: 499166a4-305b-450b-9b1b-16a4a81c0669
+2026-09-03 01:07:59 - INFO - mcp.client.streamable_http - _maybe_extract_protocol_version_from_message:193 - Negotiated protocol version: 2025-11-25
+2026-09-03 01:07:59 - INFO - mcp.client.streamable_http - handle_get_stream:298 - GET stream disconnected, reconnecting in 1000ms...
+2026-09-03 01:08:00 - INFO - main.service.mcp_client - load_tools:84 - Successfully loaded 4 tools: ['hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs']
+2026-09-03 01:08:00 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hf_whoami tool from mcp
+2026-09-03 01:08:00 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hub_repo_search tool from mcp
+2026-09-03 01:08:00 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hub_repo_details tool from mcp
+2026-09-03 01:08:00 - INFO - main.service.hybrid_query_service - _register_tool:290 - Registered hf_fs tool from mcp
+2026-09-03 01:08:00 - INFO - main.service.hybrid_query_service - initialize:310 - agent.tools.available tools=['clinical_sql', 'semantic_search', 'bm25_search', 'hybrid_document_search', 'hf_inference', 'hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs'] unavailable=[]
+2026-09-03 01:08:00 - INFO - main.service.agent_factory - create_llm:31 - Initializing Azure OpenAI LLM...
+2026-09-03 01:08:00 - INFO - main.service.hybrid_query_service - _create_openai_agent:337 - Creating FunctionAgent with native tool calling
+2026-09-03 01:08:00 - INFO - main.service.agent_service - initialize:35 - Hybrid agent service initialized with 9 available tools
+2026-09-03 01:08:00 - INFO - main.routes.routes - set_agent_service:183 - Agent service initialized in routes. Service: AgentService
+2026-09-03 01:08:00 - INFO - main.app - lifespan:32 - ✓ Agent ready for medical related analysis and query...
+2026-09-03 01:08:00 - INFO - main.app - lifespan:33 - ============================================================
+2026-09-03 01:09:48 - INFO - main.routes.routes - query_rag:334 - [QUERY] Query received from user: auth0|6a47e7ae90cbbefcace365b9 (unknown)
+2026-09-03 01:09:48 - INFO - main.routes.routes - query_rag:335 - [QUERY] User role: user
+2026-09-03 01:09:48 - INFO - main.service.hybrid_query_service - execute:346 - query.agent.received query_chars=117
+2026-09-03 01:09:48 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentWorkflowStartEvent(user_msg='What is the precise innervation density of Merkel’...', chat_history=None, memory=None, max_iterations=None, early_stopping_method=None)
+2026-09-03 01:09:48 - INFO - workflows.verbose - write_to_event_stream:78 - [init_run:0] started from AgentWorkflowStartEvent
+2026-09-03 01:09:48 - INFO - workflows.verbose - write_to_event_stream:86 - [init_run:0] complete with AgentInput
+2026-09-03 01:09:48 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='What is the precise innervation density of Merkel’s receptors per squ...
+2026-09-03 01:09:48 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 01:09:48 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 01:09:48 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 01:09:48 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 01:09:54 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 01:09:54 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_x0lIzNpXqLTWOF34j4iUWRAj', function=Func...
+2026-09-03 01:09:54 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 01:09:54 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='semantic_search', tool_kwargs={'query': "innervation density of Merkel receptors per square millimeter human digits age 50 Merkel cell neurite complex density per mm^2 digits 'a...
+2026-09-03 01:09:54 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-03 01:09:54 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=semantic_search mode=sync
+2026-09-03 01:09:54 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-03 01:09:54 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=semantic_search mode=sync
+2026-09-03 01:10:01 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=semantic_search status=success
+2026-09-03 01:10:01 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=semantic_search status=success
+2026-09-03 01:10:01 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-03 01:10:01 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='semantic_search', tool_kwargs={'query': "innervation density of Merkel receptors per square millimeter human digits age 50 Merkel cell neurite complex density per mm^2 dig...
+2026-09-03 01:10:01 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 01:10:01 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-03 01:10:01 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='What is the precise innervation density of Merkel’s receptors per squ...
+2026-09-03 01:10:01 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 01:10:01 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 01:10:01 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 01:10:01 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 01:10:08 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 01:10:08 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_T4zip4CkS6BOR9Hrdjk6isip', function=Func...
+2026-09-03 01:10:08 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 01:10:08 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='semantic_search', tool_kwargs={'query': "Merkel cell neurite complex density digits mm^2 'Merkel receptors' 'per mm2' age 50 humans"}, tool_id='call_T4zip4CkS6BOR9Hrdjk6isip')
+2026-09-03 01:10:08 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-03 01:10:08 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-03 01:10:08 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=semantic_search mode=sync
+2026-09-03 01:10:08 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='bm25_search', tool_kwargs={'query': 'Merkel receptors density per mm^2 human fingers age 50 Merkel cell density decline with age 50 per square millimeter'}, tool_id='call_ADjeks...
+2026-09-03 01:10:08 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=semantic_search mode=sync
+2026-09-03 01:10:08 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:1] started from ToolCall
+2026-09-03 01:10:08 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=bm25_search mode=sync
+2026-09-03 01:10:08 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=bm25_search mode=sync
+2026-09-03 01:10:12 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=bm25_search status=success
+2026-09-03 01:10:12 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=bm25_search status=success
+2026-09-03 01:10:12 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:1] complete with ToolCallResult
+2026-09-03 01:10:12 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='bm25_search', tool_kwargs={'query': 'Merkel receptors density per mm^2 human fingers age 50 Merkel cell density decline with age 50 per square millimeter'}, tool_id='call_...
+2026-09-03 01:10:12 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 01:10:12 - INFO - workflows.verbose - write_to_event_stream:88 - [aggregate_tool_results:0] complete with no result
+2026-09-03 01:10:14 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=semantic_search status=success
+2026-09-03 01:10:14 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=semantic_search status=success
+2026-09-03 01:10:14 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-03 01:10:14 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='semantic_search', tool_kwargs={'query': "Merkel cell neurite complex density digits mm^2 'Merkel receptors' 'per mm2' age 50 humans"}, tool_id='call_T4zip4CkS6BOR9Hrdjk6is...
+2026-09-03 01:10:14 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 01:10:14 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-03 01:10:14 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='What is the precise innervation density of Merkel’s receptors per squ...
+2026-09-03 01:10:14 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 01:10:14 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 01:10:14 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 01:10:14 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 01:10:20 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 01:10:20 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Short answer: about 10 Merkel receptors (Merkel cell–neu...
+2026-09-03 01:10:20 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 01:10:20 - INFO - workflows.verbose - on_tick:115 - [result] StopEvent(result=AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Short answer: about 10 Merkel receptors...
+2026-09-03 01:10:20 - INFO - workflows.verbose - write_to_event_stream:86 - [parse_agent_output:0] complete with StopEvent
+2026-09-03 01:10:20 - INFO - main.service.hybrid_query_service - _result:396 - query.result.collected routing=agent:semantic_search+bm25_search tools_used=['semantic_search', 'bm25_search'] tool_error_count=0 source_count=12
+2026-09-03 01:10:20 - INFO - main.service.hybrid_query_service - execute:360 - query.synthesis.completed routing=agent tools_used=['semantic_search', 'bm25_search']
+2026-09-03 01:10:32 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 751bb1854b57ffb64a7c7d434e920ada: 0.85
+2026-09-03 01:10:37 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 751bb1854b57ffb64a7c7d434e920ada: 0.90
+2026-09-03 01:10:37 - INFO - main.handoff.handoff_service - evaluate_confidence_score:75 - Starting confidence evaluation (answer_chars=701, chunks=12, threshold=40)
+2026-09-03 01:10:43 - INFO - main.handoff.handoff_service - evaluate_confidence_score:122 - Confidence evaluation completed (score=98, trigger=False)
+2026-09-03 01:10:45 - INFO - main.routes.routes - query_rag:531 - Query completed in 57229.02 ms
+2026-09-03 01:10:49 - INFO - main.handoff.handoff_service - send_handoff_email:257 - Human handoff email sent successfully.
+2026-09-03 01:12:32 - INFO - main.routes.routes - query_rag:334 - [QUERY] Query received from user: auth0|6a47e7ae90cbbefcace365b9 (unknown)
+2026-09-03 01:12:32 - INFO - main.routes.routes - query_rag:335 - [QUERY] User role: user
+2026-09-03 01:12:32 - INFO - main.service.hybrid_query_service - execute:346 - query.agent.received query_chars=117
+2026-09-03 01:12:32 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentWorkflowStartEvent(user_msg='What is the precise innervation density of Merkel’...', chat_history=None, memory=None, max_iterations=None, early_stopping_method=None)
+2026-09-03 01:12:32 - INFO - workflows.verbose - write_to_event_stream:78 - [init_run:0] started from AgentWorkflowStartEvent
+2026-09-03 01:12:32 - INFO - workflows.verbose - write_to_event_stream:86 - [init_run:0] complete with AgentInput
+2026-09-03 01:12:32 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='What is the precise innervation density of Merkel’s receptors per squ...
+2026-09-03 01:12:32 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 01:12:32 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 01:12:32 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 01:12:32 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 01:12:37 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 01:12:37 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_Uv3WuzKeaY1O7iCuz6t4ekQr', function=Func...
+2026-09-03 01:12:37 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 01:12:37 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='hybrid_document_search', tool_kwargs={'query': "Merkel receptor innervation density per mm2 in human digits age 50 Merkel cell neurite complexes density human fingertips 'per sq...
+2026-09-03 01:12:37 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-03 01:12:37 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-03 01:12:37 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=hybrid_document_search mode=sync
+2026-09-03 01:12:37 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=hybrid_document_search mode=sync
+2026-09-03 01:12:43 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=hybrid_document_search status=success
+2026-09-03 01:12:43 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=hybrid_document_search status=success
+2026-09-03 01:12:43 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-03 01:12:43 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='hybrid_document_search', tool_kwargs={'query': "Merkel receptor innervation density per mm2 in human digits age 50 Merkel cell neurite complexes density human fingertips '...
+2026-09-03 01:12:43 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 01:12:43 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-03 01:12:43 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='What is the precise innervation density of Merkel’s receptors per squ...
+2026-09-03 01:12:43 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 01:12:43 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 01:12:43 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 01:12:43 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 01:12:53 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 01:12:53 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Short answer: about 10 Merkel receptor units per mm² in ...
+2026-09-03 01:12:53 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 01:12:53 - INFO - workflows.verbose - on_tick:115 - [result] StopEvent(result=AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Short answer: about 10 Merkel receptor ...
+2026-09-03 01:12:53 - INFO - workflows.verbose - write_to_event_stream:86 - [parse_agent_output:0] complete with StopEvent
+2026-09-03 01:12:53 - INFO - main.service.hybrid_query_service - _result:396 - query.result.collected routing=agent:hybrid_document_search tools_used=['hybrid_document_search'] tool_error_count=0 source_count=4
+2026-09-03 01:12:53 - INFO - main.service.hybrid_query_service - execute:360 - query.synthesis.completed routing=agent tools_used=['hybrid_document_search']
+2026-09-03 01:13:03 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 894f30d057ae5a0824ed1d2a216b79db: 0.80
+2026-09-03 01:13:07 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 894f30d057ae5a0824ed1d2a216b79db: 0.90
+2026-09-03 01:13:07 - INFO - main.handoff.handoff_service - evaluate_confidence_score:75 - Starting confidence evaluation (answer_chars=811, chunks=4, threshold=40)
+2026-09-03 01:13:13 - INFO - main.handoff.handoff_service - evaluate_confidence_score:122 - Confidence evaluation completed (score=100, trigger=False)
+2026-09-03 01:13:15 - INFO - main.routes.routes - query_rag:531 - Query completed in 42874.24 ms
+2026-09-03 01:13:19 - INFO - main.handoff.handoff_service - send_handoff_email:257 - Human handoff email sent successfully.
+2026-09-03 01:13:28 - INFO - main.routes.routes - query_rag:334 - [QUERY] Query received from user: auth0|6a47e7ae90cbbefcace365b9 (unknown)
+2026-09-03 01:13:28 - INFO - main.routes.routes - query_rag:335 - [QUERY] User role: user
+2026-09-03 01:13:28 - INFO - main.service.hybrid_query_service - execute:346 - query.agent.received query_chars=111
+2026-09-03 01:13:28 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentWorkflowStartEvent(user_msg='What is the precise innervation density of Merkel’...', chat_history=None, memory=None, max_iterations=None, early_stopping_method=None)
+2026-09-03 01:13:28 - INFO - workflows.verbose - write_to_event_stream:78 - [init_run:0] started from AgentWorkflowStartEvent
+2026-09-03 01:13:28 - INFO - workflows.verbose - write_to_event_stream:86 - [init_run:0] complete with AgentInput
+2026-09-03 01:13:28 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='What is the precise innervation density of Merkel’s receptors per squ...
+2026-09-03 01:13:28 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 01:13:28 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 01:13:28 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 01:13:28 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 01:13:33 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 01:13:33 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={'tool_calls': [ChatCompletionMessageFunctionToolCall(id='call_x5wmPq7LOplMN3Wi9FoIOUGg', function=Func...
+2026-09-03 01:13:33 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 01:13:33 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='semantic_search', tool_kwargs={'query': 'Merkel receptor innervation density per square millimeter in human digits at age 50 Merkel cells Merkel discs SA1 receptor density per m...
+2026-09-03 01:13:33 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:0] started from ToolCall
+2026-09-03 01:13:33 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=semantic_search mode=sync
+2026-09-03 01:13:33 - INFO - workflows.verbose - write_to_event_stream:88 - [parse_agent_output:0] complete with no result
+2026-09-03 01:13:33 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=semantic_search mode=sync
+2026-09-03 01:13:33 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCall(tool_name='bm25_search', tool_kwargs={'query': 'Merkel receptor density per mm2 digits age 50 innervation density Merkel cells human fingers SA1 innervation per square millimeter', 'k': 10...
+2026-09-03 01:13:33 - INFO - workflows.verbose - write_to_event_stream:78 - [call_tool:1] started from ToolCall
+2026-09-03 01:13:33 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=bm25_search mode=sync
+2026-09-03 01:13:33 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=bm25_search mode=sync
+2026-09-03 01:13:38 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=bm25_search status=success
+2026-09-03 01:13:38 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=bm25_search status=success
+2026-09-03 01:13:38 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:1] complete with ToolCallResult
+2026-09-03 01:13:38 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='bm25_search', tool_kwargs={'query': 'Merkel receptor density per mm2 digits age 50 innervation density Merkel cells human fingers SA1 innervation per square millimeter', '...
+2026-09-03 01:13:38 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 01:13:38 - INFO - workflows.verbose - write_to_event_stream:88 - [aggregate_tool_results:0] complete with no result
+2026-09-03 01:13:39 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=semantic_search status=success
+2026-09-03 01:13:39 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=semantic_search status=success
+2026-09-03 01:13:39 - INFO - workflows.verbose - write_to_event_stream:86 - [call_tool:0] complete with ToolCallResult
+2026-09-03 01:13:39 - INFO - workflows.verbose - on_tick:97 - [tick] add: ToolCallResult(tool_name='semantic_search', tool_kwargs={'query': 'Merkel receptor innervation density per square millimeter in human digits at age 50 Merkel cells Merkel discs SA1 receptor density...
+2026-09-03 01:13:39 - INFO - workflows.verbose - write_to_event_stream:78 - [aggregate_tool_results:0] started from ToolCallResult
+2026-09-03 01:13:39 - INFO - workflows.verbose - write_to_event_stream:86 - [aggregate_tool_results:0] complete with AgentInput
+2026-09-03 01:13:39 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='What is the precise innervation density of Merkel’s receptors per squ...
+2026-09-03 01:13:39 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 01:13:39 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 01:13:39 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 01:13:39 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 01:13:47 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 01:13:47 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Short answer: about 10 Merkel (SA1) receptors per mm² of...
+2026-09-03 01:13:47 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 01:13:47 - INFO - workflows.verbose - on_tick:115 - [result] StopEvent(result=AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Short answer: about 10 Merkel (SA1) rec...
+2026-09-03 01:13:47 - INFO - workflows.verbose - write_to_event_stream:86 - [parse_agent_output:0] complete with StopEvent
+2026-09-03 01:13:47 - INFO - main.service.hybrid_query_service - _result:396 - query.result.collected routing=agent:bm25_search+semantic_search tools_used=['bm25_search', 'semantic_search'] tool_error_count=0 source_count=8
+2026-09-03 01:13:47 - INFO - main.service.hybrid_query_service - execute:360 - query.synthesis.completed routing=agent tools_used=['bm25_search', 'semantic_search']
+2026-09-03 01:13:57 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 20c28bf4f29f921a2003597ac3befed4: 0.90
+2026-09-03 01:14:03 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 20c28bf4f29f921a2003597ac3befed4: 1.00
+2026-09-03 01:14:03 - INFO - main.handoff.handoff_service - evaluate_confidence_score:75 - Starting confidence evaluation (answer_chars=702, chunks=8, threshold=40)
+2026-09-03 01:14:15 - INFO - main.handoff.handoff_service - evaluate_confidence_score:122 - Confidence evaluation completed (score=100, trigger=False)
+2026-09-03 01:14:17 - INFO - main.routes.routes - query_rag:531 - Query completed in 48740.07 ms
+2026-09-03 01:17:38 - INFO - main.routes.routes - query_rag:334 - [QUERY] Query received from user: auth0|6a47e7ae90cbbefcace365b9 (unknown)
+2026-09-03 01:17:38 - INFO - main.routes.routes - query_rag:335 - [QUERY] User role: user
+2026-09-03 01:17:38 - INFO - main.service.hybrid_query_service - execute:346 - query.agent.received query_chars=40
+2026-09-03 01:17:38 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentWorkflowStartEvent(user_msg='what is the average blood pressure range', chat_history=None, memory=None, max_iterations=None, early_stopping_method=None)
+2026-09-03 01:17:38 - INFO - workflows.verbose - write_to_event_stream:78 - [init_run:0] started from AgentWorkflowStartEvent
+2026-09-03 01:17:38 - INFO - workflows.verbose - write_to_event_stream:86 - [init_run:0] complete with AgentInput
+2026-09-03 01:17:38 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='what is the average blood pressure range')])], current_agent_name='Ag...
+2026-09-03 01:17:38 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 01:17:38 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 01:17:38 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 01:17:38 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 01:17:48 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 01:17:48 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='For adults, “normal” blood pressure is usually given as ...
+2026-09-03 01:17:48 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 01:17:48 - INFO - workflows.verbose - on_tick:115 - [result] StopEvent(result=AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='For adults, “normal” blood pressure is ...
+2026-09-03 01:17:48 - INFO - workflows.verbose - write_to_event_stream:86 - [parse_agent_output:0] complete with StopEvent
+2026-09-03 01:17:48 - INFO - main.service.hybrid_query_service - _result:396 - query.result.collected routing=agent tools_used=[] tool_error_count=0 source_count=0
+2026-09-03 01:17:48 - WARNING - main.service.hybrid_query_service - execute:358 - Agent returned without invoking a tool; running intent-routed fallback
+2026-09-03 01:17:48 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=bm25_search mode=sync
+2026-09-03 01:17:48 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=bm25_search mode=sync
+2026-09-03 01:17:55 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=bm25_search status=success
+2026-09-03 01:17:55 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=bm25_search status=success
+2026-09-03 01:17:55 - INFO - main.service.hybrid_query_service - _result:396 - query.result.collected routing=fallback:bm25_search tools_used=['bm25_search'] tool_error_count=0 source_count=4
+2026-09-03 01:18:01 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace 2e0ed17fe9e5a2d3d2449f2115a07041: 1.00
+2026-09-03 01:18:04 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace 2e0ed17fe9e5a2d3d2449f2115a07041: 0.50
+2026-09-03 01:18:04 - INFO - main.handoff.handoff_service - evaluate_confidence_score:75 - Starting confidence evaluation (answer_chars=286, chunks=4, threshold=40)
+2026-09-03 01:18:11 - INFO - main.handoff.handoff_service - evaluate_confidence_score:122 - Confidence evaluation completed (score=90, trigger=False)
+2026-09-03 01:18:14 - INFO - main.routes.routes - query_rag:531 - Query completed in 35454.77 ms
+2026-09-03 01:21:19 - INFO - main.routes.routes - query_rag:334 - [QUERY] Query received from user: auth0|6a47e7ae90cbbefcace365b9 (unknown)
+2026-09-03 01:21:19 - INFO - main.routes.routes - query_rag:335 - [QUERY] User role: user
+2026-09-03 01:21:19 - INFO - main.service.hybrid_query_service - execute:346 - query.agent.received query_chars=92
+2026-09-03 01:21:19 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentWorkflowStartEvent(user_msg='Show me all mechanoreceptors that are located supe...', chat_history=None, memory=None, max_iterations=None, early_stopping_method=None)
+2026-09-03 01:21:19 - INFO - workflows.verbose - write_to_event_stream:78 - [init_run:0] started from AgentWorkflowStartEvent
+2026-09-03 01:21:19 - INFO - workflows.verbose - write_to_event_stream:86 - [init_run:0] complete with AgentInput
+2026-09-03 01:21:19 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentInput(input=[ChatMessage(role=<MessageRole.USER: 'user'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='Show me all mechanoreceptors that are located superficially and have ...
+2026-09-03 01:21:19 - INFO - workflows.verbose - write_to_event_stream:78 - [setup_agent:0] started from AgentInput
+2026-09-03 01:21:19 - INFO - workflows.verbose - write_to_event_stream:86 - [setup_agent:0] complete with AgentSetup
+2026-09-03 01:21:19 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentSetup(input=[ChatMessage(role=<MessageRole.SYSTEM: 'system'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text="You are MedLearn, a medical education assistant with several\nind...
+2026-09-03 01:21:19 - INFO - workflows.verbose - write_to_event_stream:78 - [run_agent_step:0] started from AgentSetup
+2026-09-03 01:21:28 - INFO - workflows.verbose - write_to_event_stream:86 - [run_agent_step:0] complete with AgentOutput
+2026-09-03 01:21:28 - INFO - workflows.verbose - on_tick:97 - [tick] add: AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='You’re asking which cutaneous mechanoreceptors are both ...
+2026-09-03 01:21:28 - INFO - workflows.verbose - write_to_event_stream:78 - [parse_agent_output:0] started from AgentOutput
+2026-09-03 01:21:28 - INFO - workflows.verbose - on_tick:115 - [result] StopEvent(result=AgentOutput(response=ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, additional_kwargs={}, blocks=[TextBlock(block_type='text', text='You’re asking which cutaneous mechanore...
+2026-09-03 01:21:28 - INFO - workflows.verbose - write_to_event_stream:86 - [parse_agent_output:0] complete with StopEvent
+2026-09-03 01:21:28 - INFO - main.service.hybrid_query_service - _result:396 - query.result.collected routing=agent tools_used=[] tool_error_count=0 source_count=0
+2026-09-03 01:21:28 - WARNING - main.service.hybrid_query_service - execute:358 - Agent returned without invoking a tool; running intent-routed fallback
+2026-09-03 01:21:28 - INFO - main.service.hybrid_query_service - call:154 - tool.execution.start tool=hybrid_document_search mode=sync
+2026-09-03 01:21:28 - INFO - main.service.hybrid_query_service - query:108 - tool.execution.start tool=hybrid_document_search mode=sync
+2026-09-03 01:21:34 - INFO - main.service.hybrid_query_service - query:113 - tool.execution.end tool=hybrid_document_search status=success
+2026-09-03 01:21:34 - INFO - main.service.hybrid_query_service - call:158 - tool.execution.end tool=hybrid_document_search status=success
+2026-09-03 01:21:34 - INFO - main.service.hybrid_query_service - _result:396 - query.result.collected routing=fallback:hybrid_document_search tools_used=['hybrid_document_search'] tool_error_count=0 source_count=4
+2026-09-03 01:21:41 - INFO - main.evaluation.dataset_evaluation - evaluate_faithfulness_score:85 - Faithfulness score for trace db92e5603435750d3f3c5530fadc8492: 1.00
+2026-09-03 01:21:45 - INFO - main.evaluation.dataset_evaluation - evaluate_answer_relevance:141 - Answer relevance score for trace db92e5603435750d3f3c5530fadc8492: 1.00
+2026-09-03 01:21:45 - INFO - main.handoff.handoff_service - evaluate_confidence_score:75 - Starting confidence evaluation (answer_chars=207, chunks=4, threshold=40)
+2026-09-03 01:21:51 - INFO - main.handoff.handoff_service - evaluate_confidence_score:122 - Confidence evaluation completed (score=100, trigger=False)
+2026-09-03 01:21:54 - INFO - main.routes.routes - query_rag:531 - Query completed in 34899.88 ms
+2026-09-03 01:36:23 - INFO - main.app - lifespan:38 - ============================================================
+2026-09-03 01:36:23 - INFO - main.app - lifespan:39 - Shutting down MedLearn AI Assistant...
+2026-09-03 01:36:23 - INFO - main.app - lifespan:40 - ============================================================

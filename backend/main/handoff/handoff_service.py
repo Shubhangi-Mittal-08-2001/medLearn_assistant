@@ -5,7 +5,7 @@ import datetime
 import secrets
 import re
 from email.mime.text import MIMEText
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Sequence
 from dotenv import load_dotenv
 from llama_index.core.settings import Settings
 
@@ -61,18 +61,54 @@ def evaluate_score(
     return {"trigger": False, "reason": "no escalation needed"}
 
 
-async def evaluate_confidence_score(answer: str) -> Dict[str, Any]:
-    """Evaluate LLM confidence score (0-100) and trigger handoff if below threshold (40)."""
+async def evaluate_confidence_score(
+    answer: str,
+    question: str,
+    relevant_chunks: Sequence[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Evaluate answer confidence against the question and retrieved context."""
     # Use LLM to rate confidence
     # 1. Get Settings.llm (raise ValueError if None)
-    # 2. Prompt: "Rate confidence 0–100.\nAnswer: {answer}"
+    # 2. Prompt: Rate confidence using the question, answer, and retrieved chunks
     # 3. Parse score from response (extract digits, default to 50)
     # 4. Return {"trigger": bool, "reason": str, "confidence": int}
+    logger.info(
+        "Starting confidence evaluation (answer_chars=%d, chunks=%d, threshold=%d)",
+        len(answer),
+        len(relevant_chunks),
+        CONFIDENCE_THRESHOLD,
+    )
     try:
         llm = Settings.llm
         if llm is None:
             raise ValueError("LLM is not configured in Settings.")
-        confidence_prompt = f"Rate confidence 0–100.\nAnswer: {answer}"
+        context = "\n\n".join(
+            str(chunk.get("text", chunk.get("content", "")))
+            for chunk in relevant_chunks
+            if chunk.get("text") or chunk.get("content")
+        )
+        confidence_prompt = f"""Evaluate how confidently the answer resolves the question using only the retrieved context.
+
+Score from 0 to 100 based on:
+- whether the answer directly addresses the question;
+- whether its claims are supported by the retrieved context;
+- whether the context contains enough relevant information;
+- whether the answer avoids unsupported assumptions or contradictions.
+
+Return only one integer from 0 to 100.
+
+<question>
+{question}
+</question>
+
+<retrieved_context>
+{context or "No relevant context was retrieved."}
+</retrieved_context>
+
+<answer>
+{answer}
+</answer>"""
+        logger.debug("Submitting confidence prompt to the configured LLM")
         confidence_response = await llm.acomplete(confidence_prompt)
         score_match = re.search(
             r"(?:confidence|score|rating)\D{0,12}(100|[0-9]{1,2})\b",
@@ -83,6 +119,11 @@ async def evaluate_confidence_score(answer: str) -> Dict[str, Any]:
             score_match = re.search(r"\b(100|[0-9]{1,2})\b", confidence_response.text)
         confidence_score = int(score_match.group(1)) if score_match else 50
         confidence_score = max(0, min(100, confidence_score))
+        logger.info(
+            "Confidence evaluation completed (score=%d, trigger=%s)",
+            confidence_score,
+            confidence_score < CONFIDENCE_THRESHOLD,
+        )
     except Exception as exc:
         logger.warning("Confidence evaluation unavailable: %s", exc)
         return {

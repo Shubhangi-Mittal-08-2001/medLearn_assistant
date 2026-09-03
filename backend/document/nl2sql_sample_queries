@@ -1,0 +1,24 @@
+Here are natural language user queries structured for a Text-to-SQL (NL2SQL) RAG system using your provided medical education database schema.
+
+To show the breadth and depth of your schema, these queries are divided by complexity, spanning single-table questions to advanced multi-table joins and analytical metrics.
+
+Easy / Single-Table QueriesThese queries test the RAG system's ability to extract columns from a single table and apply basic WHERE or ORDER BY filters.
+
+Query: "Show me all mechanoreceptors that are located superficially and have a rapid adaptation rate."
+Query: "What is the typical adult reference range and unit for Vitamin B12?"
+Query: "List the clinical examples and fiber types associated with Deep Pain."
+Query: "Which drug interactions are classified as a 'major' severity level?"
+
+Medium / Multi-Table Joins & AggregationsThese queries force the RAG system to use primary/foreign keys (receptor_id) to join the master tables with quantitative or disease-state tables.
+
+Query: "What is the density per square millimeter of Merkel Receptors in the Fingertips of elderly patients?"
+Query: "List all clinical conditions that affect the Pacinian Corpuscle, along with their treatment approaches."
+Query: "Find the average receptor density in the fingertips for young adults across all documented receptors."
+Query: "Which receptors are present in the forearm, and what are their primary stimuli?"
+
+Advanced / Complex Logic & Analytical QueriesThese queries require complex SQL operations, such as string/array containment matching (PostgreSQL ANY or @>), mathematical percentage calculations, conditional logic, or view referencing.
+
+Query: "Show me the percentage decline in Merkel Receptor density in the fingertips as a patient moves from a young adult to middle age, and finally to elderly."
+Query: "Which pain medications interact with Warfarin, what are the clinical effects, and what is the recommendation for each?"
+Query: "Find all clinical conditions that cause a symmetrical sensory loss in a stocking-glove pattern, and identify every receptor type affected by that condition."
+Query: "Identify any laboratory tests where an abnormal high result could indicate a risk of thrombosis or polycythemia, and list the common causes."

@@ -105,16 +105,20 @@ class TrackingQueryEngine:
             })
 
     def query(self, query: str) -> Any:
+        logger.info("tool.execution.start tool=%s mode=sync", self.name)
         try:
             response = self.query_engine.query(query)
             self._record_source_nodes(response)
             self.events.append(ToolExecution(self.name, "success"))
+            logger.info("tool.execution.end tool=%s status=success", self.name)
             return response
         except Exception as exc:
             self.events.append(ToolExecution(self.name, "error", str(exc)))
+            logger.warning("tool.execution.end tool=%s status=error error=%s", self.name, exc)
             raise
 
     async def aquery(self, query: str) -> Any:
+        logger.info("tool.execution.start tool=%s mode=async", self.name)
         try:
             if hasattr(self.query_engine, "aquery"):
                 response = await self.query_engine.aquery(query)
@@ -122,9 +126,11 @@ class TrackingQueryEngine:
                 response = await asyncio.to_thread(self.query_engine.query, query)
             self._record_source_nodes(response)
             self.events.append(ToolExecution(self.name, "success"))
+            logger.info("tool.execution.end tool=%s status=success", self.name)
             return response
         except Exception as exc:
             self.events.append(ToolExecution(self.name, "error", str(exc)))
+            logger.warning("tool.execution.end tool=%s status=error error=%s", self.name, exc)
             raise
 
 
@@ -145,24 +151,30 @@ class TrackingTool:
         return self.call(*args, **kwargs)
 
     def call(self, *args: Any, **kwargs: Any) -> Any:
+        logger.info("tool.execution.start tool=%s mode=sync", self.name)
         try:
             response = self.tool.call(*args, **kwargs)
             self.events.append(ToolExecution(self.name, "success"))
+            logger.info("tool.execution.end tool=%s status=success", self.name)
             return response
         except Exception as exc:
             self.events.append(ToolExecution(self.name, "error", str(exc)))
+            logger.warning("tool.execution.end tool=%s status=error error=%s", self.name, exc)
             raise
 
     async def acall(self, *args: Any, **kwargs: Any) -> Any:
+        logger.info("tool.execution.start tool=%s mode=async", self.name)
         try:
             if hasattr(self.tool, "acall"):
                 response = await self.tool.acall(*args, **kwargs)
             else:
                 response = await asyncio.to_thread(self.tool.call, *args, **kwargs)
             self.events.append(ToolExecution(self.name, "success"))
+            logger.info("tool.execution.end tool=%s status=success", self.name)
             return response
         except Exception as exc:
             self.events.append(ToolExecution(self.name, "error", str(exc)))
+            logger.warning("tool.execution.end tool=%s status=error error=%s", self.name, exc)
             raise
 
 
@@ -201,10 +213,10 @@ def create_query_engine_tools(
     """Create SQL, semantic, BM25, and fusion ``QueryEngineTool`` instances."""
     tools: list[QueryEngineTool] = []
     builders: Iterable[tuple[str, str, Any]] = (
-        ("clinical_sql", "Use for factual clinical data: drug interactions, lab ranges, receptor densities, and counts.", _sql_query_engine),
-        ("semantic_search", "Use for conceptual explanations from indexed medical documents.", lambda: get_query_engine(similarity_top_k=4)),
-        ("bm25_search", "Use for exact terminology, definitions, numbers, and keyword-heavy document questions.", lambda: _fusion_service()._build_routed_retriever(["bm25"])),
-        ("hybrid_document_search", "Use when a document question needs both semantic and exact-keyword evidence.", lambda: _fusion_service().fusion_retriever),
+        ("clinical_sql", "Query the read-only structured clinical database for exact rows, counts, drug interactions, lab reference ranges, receptor densities, and other tabular facts. Input is a natural-language question. Combine with document or Hugging Face tools when the question explicitly needs both structured facts and another source.", _sql_query_engine),
+        ("semantic_search", "Search uploaded/indexed medical documents by meaning. Use for conceptual explanations, mechanisms, and paraphrased textbook questions. Input is the document-focused question. Combine with another independent source when the user requests comparison or supplementary information.", lambda: get_query_engine(similarity_top_k=4)),
+        ("bm25_search", "Search uploaded/indexed medical documents using exact keywords. Use for named terms, quotations, definitions, citations, numbers, and exact wording. Input is the document-focused question. Combine with semantic_search only when separate results are truly needed; otherwise prefer hybrid_document_search.", lambda: _fusion_service()._build_routed_retriever(["bm25"])),
+        ("hybrid_document_search", "Search uploaded/indexed medical documents with fused semantic and BM25 retrieval. Use for complex document questions requiring both conceptual and exact evidence, including comparisons. Input is the document-focused question. It may run alongside SQL or Hugging Face tools for multi-source requests.", lambda: _fusion_service().fusion_retriever),
     )
     for name, description, builder in builders:
         try:
@@ -231,17 +243,21 @@ def _fusion_service() -> FusionRetrievalService:
 class HybridQueryService:
     """Builds an OpenAI-compatible agent and executes hybrid medical queries."""
 
-    SYSTEM_PROMPT = """You are MedLearn, a medical education assistant for indexed
-course materials and a clinical SQL database.
-You MUST call a tool before answering. For lecture notes, citations, authors,
-footnotes, anatomy, and somatosensory content, call bm25_search or
-hybrid_document_search first (use semantic_search for conceptual explanations).
-Use clinical_sql only for structured table facts (drug interactions, lab ranges,
-densities stored in SQL). Hugging Face MCP tools are only for a model-search or
-inference request. Never claim document search is unavailable unless a tool
-returned an error. Never answer from general web knowledge when a document tool
-is available. State uncertainty if retrieved context is insufficient and never
-expose PII."""
+    SYSTEM_PROMPT = """You are MedLearn, a medical education assistant with several
+independent information sources. Identify the user's information requirements, then
+select exactly the tool or tools that satisfy them before answering. Uploaded or
+indexed textbook content uses semantic_search, bm25_search, or
+hybrid_document_search. Structured clinical records use clinical_sql. Hugging Face
+MCP tools and hf_inference are first-class tools for information or model operations
+the user asks to obtain from Hugging Face; they are not fallbacks.
+
+For a multi-source request, call every required source and synthesize all successful
+results. Issue independent calls together so the runtime can execute them in
+parallel; use sequential calls only when a later call needs an earlier result (for
+example model search followed by inference). Do not call every tool by default. If
+one call fails, continue with other independent selected tools, disclose the missing
+source, and never invent its result. Never claim a source is unavailable unless its
+tool returned an error. State when evidence is insufficient and never expose PII."""
 
     DATA_TOOLS = {"clinical_sql", "semantic_search", "bm25_search", "hybrid_document_search"}
 
@@ -280,15 +296,22 @@ expose PII."""
         self.tools = []
         for tool in create_query_engine_tools(self.events, self.source_nodes):
             self._register_tool(tool, "data_tools")
+        # Local HF inference is independently useful and must not depend on MCP
+        # discovery or on document/embedding initialization.
+        self._register_tool(custom_inference_tool, "custom_tool")
         try:
             mcp_tools = await HuggingFaceMCPService().load_tools()
             for tool in mcp_tools:
                 self._register_tool(tool, "mcp")
-            self._register_tool(custom_inference_tool, "custom_tool")
         except Exception as exc:
             self.events.append(ToolExecution("huggingface_mcp", "unavailable", str(exc)))
             logger.warning("Hugging Face MCP unavailable; continuing with local tools: %s", exc)
         self.initialization_errors = list(self.events)
+        logger.info(
+            "agent.tools.available tools=%s unavailable=%s",
+            [self._tool_name(tool) for tool in self.tools],
+            [event.name for event in self.initialization_errors],
+        )
         if self.tools:
             try:
                 self.agent = self._create_openai_agent(self.tools)
@@ -320,6 +343,7 @@ expose PII."""
 
     async def execute(self, question: str) -> HybridQueryResult:
         await self.initialize()
+        logger.info("query.agent.received query_chars=%d", len(question))
         # TrackingQueryEngine objects retain this list reference, so mutate it in
         # place instead of rebinding it for each request.
         self.events[:] = self.initialization_errors
@@ -330,9 +354,10 @@ expose PII."""
                 # treated as ctx (or dropped), so the model never sees the question.
                 response = await self.agent.run(user_msg=question)
                 result = self._result(question, str(response), "agent")
-                if not any(event.name in self.DATA_TOOLS and event.status == "success" for event in self.events):
-                    logger.warning("Agent returned without using data tools; running retrieval fallback")
+                if not result.tools_used:
+                    logger.warning("Agent returned without invoking a tool; running intent-routed fallback")
                     return await self._fallback(question)
+                logger.info("query.synthesis.completed routing=agent tools_used=%s", result.tools_used)
                 return result
             except Exception as exc:
                 logger.warning("Agent execution failed; attempting deterministic fallback: %s", exc)
@@ -358,6 +383,18 @@ expose PII."""
 
     def _result(self, question: str, answer: str, routing: str) -> HybridQueryResult:
         used = list(dict.fromkeys(event.name for event in self.events if event.status == "success"))
-        errors = [{"tool": event.name, "message": event.detail or event.status}
-                  for event in self.events if event.status in {"error", "unavailable"}]
-        return HybridQueryResult(question, answer, list(self.source_nodes), used, errors, routing)
+        errors = []
+        seen_errors: set[tuple[str, str]] = set()
+        for event in self.events:
+            if event.status not in {"error", "unavailable"}:
+                continue
+            key = (event.name, event.detail or event.status)
+            if key not in seen_errors:
+                errors.append({"tool": key[0], "message": key[1]})
+                seen_errors.add(key)
+        actual_routing = f"{routing}:{'+'.join(used)}" if used else routing
+        logger.info(
+            "query.result.collected routing=%s tools_used=%s tool_error_count=%d source_count=%d",
+            actual_routing, used, len(errors), len(self.source_nodes),
+        )
+        return HybridQueryResult(question, answer, list(self.source_nodes), used, errors, actual_routing)
