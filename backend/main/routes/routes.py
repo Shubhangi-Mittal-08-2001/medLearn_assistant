@@ -166,7 +166,9 @@ def _guarded_response(question: str, answer: str, source_nodes: list[dict], inpu
         source_nodes=sanitized_source_nodes,
         validation_results=ValidationResults(
             input_allowed=True,
-            pii_detected=input_decision.phi_detected or output.pii_detected or bool(source_phi_summaries),
+            # This legacy field consistently describes the original request.
+            # Output/source sanitization is reported separately below.
+            pii_detected=input_decision.phi_detected,
             pii_summaries=pii_summaries,
             output_sanitized=output.output_sanitized or bool(source_phi_summaries),
             output_blocked=output.blocked,
@@ -455,11 +457,19 @@ async def query_rag(
                     explicit_handoff = {"trigger": False, "reason": "evaluation unavailable"}
 
                 full_chunks = list(result.source_nodes)
-                score_based_handoff = evaluate_score(
-                    faithfulness,
-                    relevance,
-                    request.question,
-                    no_chunks=not full_chunks,
+                successful_operation = "hf_inference" in result.tools_used
+                # Retrieval faithfulness/no-chunk scoring is not meaningful for
+                # successful operational tools such as model inference. Their
+                # returned result is the requested output, not a retrieved node.
+                score_based_handoff = (
+                    {"trigger": False, "reason": "successful operational tool result"}
+                    if successful_operation
+                    else evaluate_score(
+                        faithfulness,
+                        relevance,
+                        request.question,
+                        no_chunks=not full_chunks,
+                    )
                 )
                 if explicit_handoff["trigger"]:
                     handoff, priority = explicit_handoff, "high"

@@ -10,14 +10,32 @@ from llama_index.core.tools import BaseTool
 # if the specific library version isn't perfectly aligned, but assumes the interface exists.
 try:
     from llama_index.tools.mcp import BasicMCPClient, McpToolSpec
+    from llama_index.core.tools import FunctionTool
 except ImportError:
     # Fallback or mock for demonstration if specific package combination is tricky in generated code
     logging.warning("llama-index-tools-mcp not found. Ensure dependencies are installed.")
     BasicMCPClient = Any
     McpToolSpec = Any
+    FunctionTool = Any
 
 load_dotenv()
 logger = logging.getLogger(__name__)
+
+
+def iter_leaf_exceptions(exc: BaseException):
+    """Yield actionable leaf errors from Python 3.11 exception groups."""
+    children = getattr(exc, "exceptions", None)
+    if children:
+        for child in children:
+            yield from iter_leaf_exceptions(child)
+    else:
+        yield exc
+
+
+def root_exception_message(exc: BaseException) -> str:
+    """Return all leaf errors, avoiding an unhelpful TaskGroup-only message."""
+    leaves = list(iter_leaf_exceptions(exc))
+    return "; ".join(f"{type(item).__name__}: {item}" for item in leaves) or str(exc)
 
 class HuggingFaceMCPService:
     """
@@ -48,7 +66,7 @@ class HuggingFaceMCPService:
         Raises:
             ConnectionError: If connection to MCP server fails.
         """
-        logger.info(f"Connecting to MCP Server at {self.url}...")
+        logger.info("Connecting to MCP Server at %s", self.url)
         
         try:
             # 1. Initialize Client
@@ -72,7 +90,69 @@ class HuggingFaceMCPService:
             tool_spec = McpToolSpec(client=client)
             
             # 3. Get all tools using async method
-            tools = await tool_spec.to_tool_list_async()
+            discovered_tools = await tool_spec.to_tool_list_async()
+
+            # McpToolSpec's generated sync function bridges its async function by
+            # creating another event loop. BasicMCPClient, however, owns an
+            # httpx.AsyncClient created on this discovery loop. Reusing it from
+            # the bridge is unsafe and caused intermittent AnyIO TaskGroup errors.
+            # Each executable wrapper therefore constructs its client on the same
+            # loop that performs the call. Discovery and execution remain MCP-based.
+            tools = []
+            for discovered in discovered_tools:
+                metadata = discovered.metadata
+                schema = metadata.fn_schema.model_json_schema()
+                if metadata.name == "hub_repo_search":
+                    metadata.description += (
+                        " Use only fields present in this tool's schema. For model inference "
+                        "searches, use repo_types=[\"model\"], put pipeline/task and language "
+                        "tags in filters (for example [\"text-classification\", \"language:en\"]), "
+                        "and prefer sort=\"downloads\". Do not send pipeline_tag or language fields."
+                    )
+                if metadata.name == "hub_repo_details" and "repo_ids" in schema.get("properties", {}):
+                    metadata.description += (
+                        " Call only when search-result metadata is insufficient for model selection. "
+                        "Pass repo_ids as a non-empty JSON array, for example "
+                        '{"repo_ids": ["some-org/some-model"]}. Never pass repo_id. For inference, '
+                        "use overview details to prefer a model with a live inference provider."
+                    )
+                logger.info(
+                    "mcp.tool.discovered name=%s description=%s input_schema=%s",
+                    metadata.name,
+                    metadata.description,
+                    schema,
+                )
+
+                async def invoke(_tool_name=metadata.name, **arguments):
+                    logger.debug("mcp.tool.invoke name=%s arguments=%s", _tool_name, arguments)
+                    invocation_client = BasicMCPClient(
+                        command_or_url=self.url,
+                        headers=self.headers,
+                    )
+                    try:
+                        result = await invocation_client.call_tool(_tool_name, arguments)
+                        logger.info(
+                            "mcp.tool.result name=%s status=%s",
+                            _tool_name,
+                            "error" if getattr(result, "isError", False) else "success",
+                        )
+                        return result
+                    except Exception as exc:
+                        for leaf in iter_leaf_exceptions(exc):
+                            logger.error(
+                                "mcp.tool.error name=%s root_exception_type=%s root_exception_message=%s",
+                                _tool_name,
+                                type(leaf).__name__,
+                                leaf,
+                            )
+                        raise
+                    finally:
+                        await invocation_client.http_client.aclose()
+
+                tools.append(FunctionTool.from_defaults(async_fn=invoke, tool_metadata=metadata))
+
+            # The discovery client is no longer captured by returned tools.
+            await client.http_client.aclose()
             
             # 4. Filter specific tools if requested
             if allowed_tools:
@@ -84,6 +164,13 @@ class HuggingFaceMCPService:
             logger.info(f"Successfully loaded {len(tools)} tools: {[t.metadata.name for t in tools]}")
             return tools
             
-        except Exception as e:
-            logger.error(f"Failed to load MCP tools: {str(e)}")
-            raise ConnectionError(f"Could not connect to HF MCP Server: {e}")
+        except Exception as exc:
+            for leaf in iter_leaf_exceptions(exc):
+                logger.error(
+                    "Failed to load MCP tools: root_exception_type=%s root_exception_message=%s",
+                    type(leaf).__name__,
+                    leaf,
+                )
+            raise ConnectionError(
+                f"Could not connect to HF MCP Server: {root_exception_message(exc)}"
+            ) from exc

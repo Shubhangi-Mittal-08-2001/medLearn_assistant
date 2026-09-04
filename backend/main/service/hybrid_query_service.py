@@ -8,6 +8,7 @@ making the whole query API unavailable.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import re
@@ -23,7 +24,7 @@ from sqlalchemy.engine import URL
 
 from main.service.agent_factory import create_llm
 from main.service.fusion_retrieval import FusionRetrievalService
-from main.service.mcp_client import HuggingFaceMCPService
+from main.service.mcp_client import HuggingFaceMCPService, iter_leaf_exceptions, root_exception_message
 from main.service.query_router import QueryRouter
 from main.service.rag_service import create_vector_store, get_llm, get_query_engine
 from main.tools.custom_tools import custom_inference_tool
@@ -151,31 +152,142 @@ class TrackingTool:
         return self.call(*args, **kwargs)
 
     def call(self, *args: Any, **kwargs: Any) -> Any:
-        logger.info("tool.execution.start tool=%s mode=sync", self.name)
+        logger.info("tool.execution.start tool=%s mode=sync arguments=%s", self.name, _safe_arguments(args, kwargs))
         try:
-            response = self.tool.call(*args, **kwargs)
+            self._require_search_before_inference()
+            validated_kwargs = self._validate_arguments(args, kwargs)
+            response = self.tool.call(*args, **validated_kwargs)
+            error = _response_error(response)
+            if error:
+                raise ToolUnavailableError(error)
             self.events.append(ToolExecution(self.name, "success"))
-            logger.info("tool.execution.end tool=%s status=success", self.name)
+            logger.info("tool.execution.success tool=%s", self.name)
             return response
         except Exception as exc:
-            self.events.append(ToolExecution(self.name, "error", str(exc)))
-            logger.warning("tool.execution.end tool=%s status=error error=%s", self.name, exc)
+            detail = root_exception_message(exc)
+            self.events.append(ToolExecution(self.name, "error", detail))
+            _log_tool_exception(self.name, exc)
             raise
 
     async def acall(self, *args: Any, **kwargs: Any) -> Any:
-        logger.info("tool.execution.start tool=%s mode=async", self.name)
+        logger.info("tool.execution.start tool=%s mode=async arguments=%s", self.name, _safe_arguments(args, kwargs))
         try:
+            self._require_search_before_inference()
+            validated_kwargs = self._validate_arguments(args, kwargs)
             if hasattr(self.tool, "acall"):
-                response = await self.tool.acall(*args, **kwargs)
+                response = await self.tool.acall(*args, **validated_kwargs)
             else:
-                response = await asyncio.to_thread(self.tool.call, *args, **kwargs)
+                response = await asyncio.to_thread(self.tool.call, *args, **validated_kwargs)
+            error = _response_error(response)
+            if error:
+                raise ToolUnavailableError(error)
             self.events.append(ToolExecution(self.name, "success"))
-            logger.info("tool.execution.end tool=%s status=success", self.name)
+            logger.info("tool.execution.success tool=%s", self.name)
             return response
         except Exception as exc:
-            self.events.append(ToolExecution(self.name, "error", str(exc)))
-            logger.warning("tool.execution.end tool=%s status=error error=%s", self.name, exc)
+            detail = root_exception_message(exc)
+            self.events.append(ToolExecution(self.name, "error", detail))
+            _log_tool_exception(self.name, exc)
             raise
+
+    def _require_search_before_inference(self) -> None:
+        """Prevent inference when this request has no successful model search."""
+        if self.name != "hf_inference":
+            return
+        last_search = next(
+            (event for event in reversed(self.events) if event.name == "hub_repo_search"),
+            None,
+        )
+        if last_search is None or last_search.status != "success":
+            raise ToolUnavailableError(
+                "hf_inference requires a successful hub_repo_search result with a valid model ID"
+            )
+
+    def _validate_arguments(self, args: tuple[Any, ...], kwargs: dict[str, Any]) -> dict[str, Any]:
+        """Enforce schemas for tools whose argument names must not be guessed."""
+        if args:
+            return kwargs
+        schema_model = getattr(self.metadata, "fn_schema", None)
+        if schema_model is None:
+            return kwargs
+        expected_names = set(schema_model.model_fields)
+        unexpected_names = set(kwargs) - expected_names
+        if unexpected_names:
+            error = (
+                f"unexpected argument names {sorted(unexpected_names)}; "
+                f"allowed names are {sorted(expected_names)}"
+            )
+            logger.warning(
+                "tool.arguments.invalid tool=%s input_schema=%s received_argument_names=%s validation_error=%s",
+                self.name,
+                schema_model.model_json_schema(),
+                sorted(kwargs),
+                error,
+            )
+            raise ValueError(f"Invalid arguments for {self.name}: {error}")
+        try:
+            validated = schema_model.model_validate(kwargs)
+        except Exception as exc:
+            logger.warning(
+                "tool.arguments.invalid tool=%s input_schema=%s received_argument_names=%s validation_error=%s",
+                self.name,
+                schema_model.model_json_schema(),
+                sorted(kwargs),
+                exc,
+            )
+            raise ValueError(
+                f"Invalid arguments for {self.name}; expected {sorted(expected_names)}, "
+                f"received {sorted(kwargs)}: {exc}"
+            ) from exc
+        values = validated.model_dump(exclude_unset=True)
+        if self.name == "hub_repo_details" and not values.get("repo_ids"):
+            raise ValueError("hub_repo_details requires a non-empty repo_ids list")
+        return values
+
+
+_SECRET_ARGUMENT_KEYS = {"authorization", "token", "api_key", "password", "secret"}
+
+
+def _safe_arguments(args: tuple[Any, ...], kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Summarize tool arguments without logging credentials or full user text."""
+    summary: dict[str, Any] = {"positional_count": len(args)}
+    for key, value in kwargs.items():
+        if any(secret in key.lower() for secret in _SECRET_ARGUMENT_KEYS):
+            summary[key] = "[REDACTED]"
+        elif isinstance(value, str):
+            summary[key] = {"type": "str", "length": len(value)}
+        else:
+            summary[key] = value
+    return summary
+
+
+def _response_error(response: Any) -> str | None:
+    """Recognize MCP protocol failures that FunctionTool otherwise marks successful."""
+    raw = getattr(response, "raw_output", response)
+    if isinstance(raw, str):
+        try:
+            payload = json.loads(raw)
+        except (TypeError, ValueError):
+            payload = None
+        if isinstance(payload, dict) and payload.get("error"):
+            return str(payload.get("details") or payload["error"])
+    if not (getattr(raw, "isError", False) or getattr(raw, "is_error", False)):
+        return None
+    content = getattr(raw, "content", None)
+    if isinstance(content, list):
+        messages = [str(getattr(item, "text", item)) for item in content]
+        return "; ".join(messages) or "MCP tool returned an error"
+    return str(content or "MCP tool returned an error")
+
+
+def _log_tool_exception(tool_name: str, exc: BaseException) -> None:
+    for leaf in iter_leaf_exceptions(exc):
+        logger.warning(
+            "tool.execution.error tool=%s root_exception_type=%s root_exception_message=%s",
+            tool_name,
+            type(leaf).__name__,
+            leaf,
+        )
 
 
 def _database_url() -> str | URL:
@@ -256,7 +368,17 @@ results. Issue independent calls together so the runtime can execute them in
 parallel; use sequential calls only when a later call needs an earlier result (for
 example model search followed by inference). Do not call every tool by default. If
 one call fails, continue with other independent selected tools, disclose the missing
-source, and never invent its result. Never claim a source is unavailable unless its
+source, and never invent its result. When asked to find and run a Hugging Face model,
+first call hub_repo_search using its discovered schema; only after it returns a valid
+repository ID call hf_inference with that exact ID and the user's text. Never call
+hf_inference after a failed/empty search. For hf_inference, the only argument names are
+model_id (the exact repository identifier) and text (the user's input); never use model,
+repo_id, engine, or inputs. hub_repo_details is optional and should be called only when
+its metadata is necessary to choose a search result or confirm inference availability;
+its repo_ids argument must be a non-empty list of repository IDs. Prefer candidates with
+a live Hugging Face inference provider. For hub_repo_search, use only its discovered
+schema: repo_types=["model"], filters=["text-classification", "language:en"] and
+sort="downloads" are valid; pipeline_tag and language are not fields. Never claim a source is unavailable unless its
 tool returned an error. State when evidence is insufficient and never expose PII."""
 
     DATA_TOOLS = {"clinical_sql", "semantic_search", "bm25_search", "hybrid_document_search"}
@@ -354,9 +476,11 @@ tool returned an error. State when evidence is insufficient and never expose PII
                 # treated as ctx (or dropped), so the model never sees the question.
                 response = await self.agent.run(user_msg=question)
                 result = self._result(question, str(response), "agent")
-                if not result.tools_used:
+                if not result.tools_used and not result.tool_errors:
                     logger.warning("Agent returned without invoking a tool; running intent-routed fallback")
                     return await self._fallback(question)
+                if result.tool_errors and not result.tools_used:
+                    logger.warning("Agent tool execution failed; returning recorded error without unrelated fallback")
                 logger.info("query.synthesis.completed routing=agent tools_used=%s", result.tools_used)
                 return result
             except Exception as exc:

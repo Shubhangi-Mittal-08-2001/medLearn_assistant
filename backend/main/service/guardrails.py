@@ -22,7 +22,6 @@ _FALLBACK_PHI_PATTERNS = (
     ("email address", re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"), "[REDACTED_EMAIL]"),
     ("phone number", re.compile(r"(?<!\w)(?:\+?\d{1,3}[ .-]?)?(?:\(?\d{2,4}\)?[ .-]?)\d{3,4}[ .-]\d{4}(?!\w)"), "[REDACTED_PHONE]"),
     ("Social Security number", re.compile(r"\b\d{3}-\d{2}-\d{4}\b"), "[REDACTED_SSN]"),
-    ("payment card number", re.compile(r"\b(?:\d[ -]?){13,19}\b"), "[REDACTED_CARD]"),
     ("medical record number", re.compile(r"\b(?:MRN|medical\s+record(?:\s+number)?|chart(?:\s+number)?)\s*[:#-]?\s*[A-Za-z0-9-]{4,}\b", re.I), "[REDACTED_MRN]"),
     ("health plan or insurance identifier", re.compile(r"\b(?:member\s*ID|subscriber\s*ID|insurance(?:\s+(?:ID|policy(?:\s+number)?))?|health\s*plan\s*ID)\s*[:#-]?\s*[A-Za-z0-9-]{4,}\b", re.I), "[REDACTED_HEALTH_PLAN_ID]"),
     ("patient account number", re.compile(r"\b(?:patient\s+)?account(?:\s+number|\s*#)?\s*[:#-]?\s*[A-Za-z0-9-]{4,}\b", re.I), "[REDACTED_ACCOUNT]"),
@@ -31,6 +30,24 @@ _FALLBACK_PHI_PATTERNS = (
     ("street address", re.compile(r"\b(?:address|home\s+address)\s*[:#-]\s*\d{1,6}\s+[^,\n]{2,80}", re.I), "[REDACTED_ADDRESS]"),
     ("IP address", re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"), "[REDACTED_IP]"),
 )
+
+_PAYMENT_CARD_CANDIDATE = re.compile(r"(?<![\w-])(?:\d[ -]?){13,19}(?![\w-])")
+_HANDOFF_REFERENCE = re.compile(r"\bHO-(?:\d{8}-\d{6}-[A-F0-9]{6}|[A-Z0-9]{4,})\b", re.I)
+
+
+def _passes_luhn(value: str) -> bool:
+    digits = [int(char) for char in value if char.isdigit()]
+    if not 13 <= len(digits) <= 19 or len(set(digits)) == 1:
+        return False
+    total = 0
+    parity = len(digits) % 2
+    for index, digit in enumerate(digits):
+        if index % 2 == parity:
+            digit *= 2
+            if digit > 9:
+                digit -= 9
+        total += digit
+    return total % 10 == 0
 
 # This endpoint is read-only.  Detect both SQL syntax and plain-language
 # requests so a destructive action never reaches a future tool integration.
@@ -148,6 +165,20 @@ class GuardrailsValidator:
         """Redact direct HIPAA identifiers when the optional Hub validator is unavailable."""
         redacted = text
         summaries: List[str] = []
+        card_redactions = 0
+
+        def redact_valid_card(match: re.Match[str]) -> str:
+            nonlocal card_redactions
+            if _passes_luhn(match.group(0)):
+                card_redactions += 1
+                return "[REDACTED_CARD]"
+            return match.group(0)
+
+        # Cards must be classified before the broader phone pattern can consume
+        # a prefix of a space/hyphen-separated valid card number.
+        redacted = _PAYMENT_CARD_CANDIDATE.sub(redact_valid_card, redacted)
+        if card_redactions:
+            summaries.append("payment card number redacted (fallback pattern)")
         for label, pattern, replacement in _FALLBACK_PHI_PATTERNS:
             redacted, count = pattern.subn(replacement, redacted)
             if count:
@@ -160,6 +191,12 @@ class GuardrailsValidator:
         pii_detected: bool = False
         output_sanitized: bool = False
         sanitized: str = text
+        protected: dict[str, str] = {}
+        def protect_reference(match: re.Match[str]) -> str:
+            key = f"MEDLEARNHANDOFFTOKEN{len(protected)}"
+            protected[key] = match.group(0)
+            return key
+        sanitized = _HANDOFF_REFERENCE.sub(protect_reference, sanitized)
 
         if self._pii_guard is not None:
             try:
@@ -183,4 +220,6 @@ class GuardrailsValidator:
                 output_sanitized = True
                 pii_summaries.extend(fallback_summaries)
 
+        for key, reference in protected.items():
+            sanitized = sanitized.replace(key, reference)
         return OutputDecision(blocked=False, reason=None, sanitized_text=sanitized, pii_detected=pii_detected, pii_summaries=pii_summaries, output_sanitized=output_sanitized)

@@ -3,6 +3,7 @@ import os
 import time
 import logging
 from llama_index.core.tools import FunctionTool
+from pydantic import BaseModel, ConfigDict, Field
 
 # Import HuggingFace library with fallback
 try:
@@ -14,25 +15,55 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+
+def _exception_detail(exc: Exception) -> str:
+    message = str(exc).strip()
+    return f"{type(exc).__name__}: {message}" if message else type(exc).__name__
+
+
+class HFInferenceInput(BaseModel):
+    """Canonical public argument contract for the hf_inference tool."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    model_id: str = Field(
+        ...,
+        min_length=1,
+        description=(
+            "Exact Hugging Face model repository ID returned by hub_repo_search, "
+            "in organization/model-name form."
+        ),
+    )
+    text: str = Field(
+        ...,
+        min_length=1,
+        description="The input text that the selected model should classify or analyze.",
+    )
+
 def hf_inference_api(model_id: str, text: str) -> str:
     """
     Runs inference on a specific Hugging Face model using the Inference API.
     This tool is a simple wrapper around the HuggingFace Inference API.
     
-    Use this ONLY when you have a specific model ID from the model_search MCP tool.
+    Use this ONLY when you have a specific model ID from hub_repo_search.
     If a model fails, ask the agent to search for a different model instead of 
     using hardcoded fallbacks.
     
     Args:
-        model_id: Exact model ID from HuggingFace medical models:
-    - pritamdeka/PubMedBERT-MNLI-MedNLI (NLI classification)
-    - bvanaken/clinical-assertion-negation-bert (assertion/negation detection)
+        model_id: Exact model repository ID returned by hub_repo_search.
         text (str): The text to analyze.
         
     Returns:
         str: JSON-formatted response containing results and scores, or an error message.
     """
-    logger.info(f"[HF_INFERENCE] Starting inference with model_id={model_id}, text_length={len(text)}")
+    if not model_id or not model_id.strip():
+        raise ValueError("model_id is required")
+    if not text or not text.strip():
+        raise ValueError("text is required")
+    model_id = model_id.strip()
+    text = text.strip()
+
+    logger.info("[HF_INFERENCE] Starting inference with model_id=%s, text_length=%d", model_id, len(text))
     
     try:
         # Try using HuggingFace Hub library if available
@@ -64,7 +95,13 @@ def _call_with_hub_client(model_id: str, text: str) -> str:
         logger.error("[HF_HUB_CLIENT] HF_TOKEN environment variable is not set")
         raise ValueError("HF_TOKEN environment variable is required")
     
-    client = InferenceClient(token=hf_token)
+    # `provider=None` means automatic provider selection. Hub repositories with
+    # no Inference Providers mapping make that path raise a bare StopIteration.
+    # hf-inference is Hugging Face's own hosted inference provider and can
+    # evaluate the selected repository directly (or return an actionable HTTP
+    # error when that repository is not hosted).
+    provider = os.getenv("HF_INFERENCE_PROVIDER", "hf-inference")
+    client = InferenceClient(token=hf_token, provider=provider)
     logger.debug(f"[HF_HUB_CLIENT] InferenceClient initialized successfully")
     
     try:
@@ -77,14 +114,14 @@ def _call_with_hub_client(model_id: str, text: str) -> str:
         
         return json.dumps([{"label": r.label, "score": r.score} for r in result], indent=2)
     except Exception as e:
-        error_msg = str(e)
+        error_msg = _exception_detail(e)
         logger.error(f"[HF_HUB_CLIENT] Classification failed for model '{model_id}': {error_msg}", exc_info=True)
         
         # Return detailed error to help agent decide next steps
         return json.dumps({
             "error": f"Model '{model_id}' failed",
             "details": error_msg,
-            "suggestion": "Try searching for a different model using model_search MCP tool. Look for models with high downloads and 'text-classification' task."
+            "suggestion": "Try searching for a different model using hub_repo_search. Look for models with high downloads and a text-classification task."
         }, indent=2)
 
 def _call_with_requests(model_id: str, text: str) -> str:
@@ -147,33 +184,28 @@ def _call_with_requests(model_id: str, text: str) -> str:
             return json.dumps({
                 "error": f"HTTP {response.status_code}",
                 "details": response.text[:200],
-                "suggestion": "Search for a different model using model_search. Filter by task='text-classification' and high downloads."
+                "suggestion": "Search for a different model using hub_repo_search with a text-classification filter and sort by downloads."
             }, indent=2)
     except Exception as e:
         logger.error(f"[HF_REQUESTS] Request failed for model {model_id}: {str(e)}", exc_info=True)
         return json.dumps({
             "error": "Request failed",
             "details": str(e),
-            "suggestion": "Try searching for a different model with model_search"
+            "suggestion": "Try searching for a different model with hub_repo_search"
         }, indent=2)
 
 # Create the LlamaIndex tool
 custom_inference_tool = FunctionTool.from_defaults(
     fn=hf_inference_api,
     name="hf_inference",
-    description="""Runs inference on a Hugging Face model using the Inference API.
-    
-    IMPORTANT: Use this tool ONLY after getting a specific model ID from model_search.
-    If inference fails, DO NOT retry with the same model. Instead:
-    1. Use model_search to find a different model
-    2. Look for models with high downloads (more likely to have active endpoints)
-    3. Try the new model with this tool
-    
-    Args:
-        model_id: Exact model ID from HuggingFace medical models:
-    - pritamdeka/PubMedBERT-MNLI-MedNLI (NLI classification)
-    - bvanaken/clinical-assertion-negation-bert (assertion/negation detection)
-        text: Text to analyze
-    
-    Returns: JSON with results or error with suggestions"""
+    fn_schema=HFInferenceInput,
+    description="""Run inference using a Hugging Face model.
+
+Arguments (use these exact names):
+- model_id: exact model repository ID returned by hub_repo_search, in "org/model-name" form
+- text: input text to classify or analyze
+
+Call this tool only after hub_repo_search returns a valid model ID. Call it as:
+hf_inference(model_id="some-org/some-model", text="The patient has severe chest pain.")
+Never use model, repo_id, engine, or inputs as argument names. No model is selected by default.""",
 )
