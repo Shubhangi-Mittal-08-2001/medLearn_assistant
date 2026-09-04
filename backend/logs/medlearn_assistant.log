@@ -10090,3 +10090,78 @@ operations
 2026-09-04 22:20:27 - INFO - main.app - lifespan:38 - ============================================================
 2026-09-04 22:20:27 - INFO - main.app - lifespan:39 - Shutting down MedLearn AI Assistant...
 2026-09-04 22:20:27 - INFO - main.app - lifespan:40 - ============================================================
+2026-09-04 22:26:29 - INFO - main.app - <module>:69 - CORS enabled for origins: ['http://localhost:5173', 'http://127.0.0.1:5173']
+2026-09-04 22:26:29 - INFO - main.app - <module>:72 - FastAPI app initialized with version 1.0.0
+2026-09-04 22:26:29 - INFO - main.app - lifespan:26 - ============================================================
+2026-09-04 22:26:29 - INFO - main.app - lifespan:27 - Initializing MedLearn AI Assistant Agent...
+2026-09-04 22:26:29 - INFO - main.app - lifespan:28 - ============================================================
+2026-09-04 22:26:29 - INFO - main.service.agent_service - initialize:29 - Initializing hybrid query agent service...
+2026-09-04 22:26:29 - INFO - main.service.rag_service - get_llm:201 - LLM not yet initialized, initializing services...
+2026-09-04 22:26:29 - INFO - main.service.rag_service - initialize_services:50 - Initializing RAG services (LLM, embeddings, index)...
+2026-09-04 22:26:29 - INFO - main.service.agent_factory - create_llm:31 - Initializing Azure OpenAI LLM...
+2026-09-04 22:26:29 - INFO - main.service.agent_factory - create_embel_model:42 - Initializing Azure OpenAI Embed Model...
+2026-09-04 22:26:29 - INFO - main.service.semantic_chunking - __init__:28 - Semantic chunker initialized
+2026-09-04 22:26:29 - INFO - main.service.rag_service - initialize_services:71 - Loading or creating vector index...
+2026-09-04 22:26:29 - INFO - main.service.rag_service - load_or_create_index:110 - Loading or creating vector index...
+2026-09-04 22:26:29 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-09-04 22:26:29 - INFO - main.service.rag_service - load_or_create_index:124 - Attempting to load existing index from table: medical_documents_embeddings...
+2026-09-04 22:26:30 - INFO - main.service.rag_service - load_or_create_index:129 - ✓ Loaded existing index from PostgreSQL (table: medical_documents_embeddings)
+2026-09-04 22:26:30 - INFO - main.service.rag_service - initialize_services:78 - ✓ All RAG services initialized successfully
+2026-09-04 22:26:30 - INFO - main.service.rag_service - get_query_engine:178 - Creating new query engine with similarity_top_k=4
+2026-09-04 22:26:30 - INFO - main.service.query_engine - create_query_engine:24 - Creating query engine with similarity_top_k=4...
+2026-09-04 22:26:30 - INFO - main.service.query_engine - create_query_engine:33 - ✓ Query engine created successfully (similarity_top_k=4)
+2026-09-04 22:26:30 - INFO - main.service.rag_service - get_query_engine:182 - ✓ Query engine created and cached for similarity_top_k=4
+2026-09-04 22:26:30 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-09-04 22:26:30 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medical_documents_embeddings top_k=4 configured_retrieval=vector+bm25
+2026-09-04 22:26:30 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medical_documents_embeddings
+2026-09-04 22:26:30 - INFO - main.service.fusion_retrieval - _init_retrievers:91 - fusion.retrievers loaded_bm25_nodes count=10
+2026-09-04 22:26:30 - INFO - main.service.fusion_retrieval - _init_retrievers:113 - fusion.retrievers configured retrieval_type=hybrid(vector+bm25) vector_enabled=True bm25_enabled=True
+2026-09-04 22:26:30 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=86.3 table=medical_documents_embeddings top_k=4 mode=reciprocal_rerank retrieval_type=hybrid(vector+bm25)
+2026-09-04 22:26:30 - INFO - main.service.rag_service - create_vector_store:101 - ✓ Vector store created successfully for table: medical_documents_embeddings
+2026-09-04 22:26:30 - INFO - main.service.fusion_retrieval - __init__:46 - fusion.init start table=medical_documents_embeddings top_k=4 configured_retrieval=vector+bm25
+2026-09-04 22:26:30 - INFO - main.service.fusion_retrieval - _init_retrievers:75 - fusion.retrievers initializing vector retriever table=medical_documents_embeddings
+2026-09-04 22:26:30 - INFO - main.service.fusion_retrieval - _init_retrievers:91 - fusion.retrievers loaded_bm25_nodes count=10
+2026-09-04 22:26:30 - INFO - main.service.fusion_retrieval - _init_retrievers:113 - fusion.retrievers configured retrieval_type=hybrid(vector+bm25) vector_enabled=True bm25_enabled=True
+2026-09-04 22:26:30 - INFO - main.service.fusion_retrieval - __init__:53 - fusion.init done ms=82.3 table=medical_documents_embeddings top_k=4 mode=reciprocal_rerank retrieval_type=hybrid(vector+bm25)
+2026-09-04 22:26:30 - INFO - main.service.hybrid_query_service - _register_tool:502 - Registered clinical_sql tool from data_tools
+2026-09-04 22:26:30 - INFO - main.service.hybrid_query_service - _register_tool:502 - Registered semantic_search tool from data_tools
+2026-09-04 22:26:30 - INFO - main.service.hybrid_query_service - _register_tool:502 - Registered bm25_search tool from data_tools
+2026-09-04 22:26:30 - INFO - main.service.hybrid_query_service - _register_tool:502 - Registered hybrid_document_search tool from data_tools
+2026-09-04 22:26:30 - INFO - main.service.hybrid_query_service - _register_tool:502 - Registered hf_inference tool from custom_tool
+2026-09-04 22:26:30 - INFO - main.service.mcp_client - load_tools:51 - Connecting to huggingface MCP server at https://huggingface.co/mcp
+2026-09-04 22:26:30 - INFO - mcp.client.streamable_http - _maybe_extract_session_id_from_response:181 - Received session ID: 74afa3fa-8ea8-4639-9c92-5080a6c51b32
+2026-09-04 22:26:30 - INFO - mcp.client.streamable_http - _maybe_extract_protocol_version_from_message:193 - Negotiated protocol version: 2025-11-25
+2026-09-04 22:26:30 - INFO - mcp.client.streamable_http - handle_get_stream:298 - GET stream disconnected, reconnecting in 1000ms...
+2026-09-04 22:26:31 - INFO - main.service.mcp_client - load_tools:73 - mcp.tool.discovered server=huggingface name=hf_whoami
+2026-09-04 22:26:31 - INFO - main.service.mcp_client - load_tools:73 - mcp.tool.discovered server=huggingface name=hub_repo_search
+2026-09-04 22:26:31 - INFO - main.service.mcp_client - load_tools:73 - mcp.tool.discovered server=huggingface name=hub_repo_details
+2026-09-04 22:26:31 - INFO - main.service.mcp_client - load_tools:73 - mcp.tool.discovered server=huggingface name=hf_fs
+2026-09-04 22:26:31 - INFO - main.service.mcp_client - load_tools:74 - Loaded 4 tools from huggingface MCP
+2026-09-04 22:26:31 - INFO - main.service.hybrid_query_service - _register_tool:502 - Registered hf_whoami tool from huggingface_mcp
+2026-09-04 22:26:31 - INFO - main.service.hybrid_query_service - _register_tool:502 - Registered hub_repo_search tool from huggingface_mcp
+2026-09-04 22:26:31 - INFO - main.service.hybrid_query_service - _register_tool:502 - Registered hub_repo_details tool from huggingface_mcp
+2026-09-04 22:26:31 - INFO - main.service.hybrid_query_service - _register_tool:502 - Registered hf_fs tool from huggingface_mcp
+2026-09-04 22:26:31 - INFO - main.service.mcp_client - load_tools:51 - Connecting to medical MCP server at https://pubmed.mcp.claude.com/mcp
+2026-09-04 22:26:31 - INFO - mcp.client.streamable_http - _maybe_extract_protocol_version_from_message:193 - Negotiated protocol version: 2025-11-25
+2026-09-04 22:26:32 - INFO - main.service.mcp_client - load_tools:73 - mcp.tool.discovered server=medical name=search_articles
+2026-09-04 22:26:32 - INFO - main.service.mcp_client - load_tools:73 - mcp.tool.discovered server=medical name=get_article_metadata
+2026-09-04 22:26:32 - INFO - main.service.mcp_client - load_tools:73 - mcp.tool.discovered server=medical name=find_related_articles
+2026-09-04 22:26:32 - INFO - main.service.mcp_client - load_tools:73 - mcp.tool.discovered server=medical name=lookup_article_by_citation
+2026-09-04 22:26:32 - INFO - main.service.mcp_client - load_tools:73 - mcp.tool.discovered server=medical name=convert_article_ids
+2026-09-04 22:26:32 - INFO - main.service.mcp_client - load_tools:73 - mcp.tool.discovered server=medical name=get_full_text_article
+2026-09-04 22:26:32 - INFO - main.service.mcp_client - load_tools:73 - mcp.tool.discovered server=medical name=get_copyright_status
+2026-09-04 22:26:32 - INFO - main.service.mcp_client - load_tools:74 - Loaded 7 tools from medical MCP
+2026-09-04 22:26:32 - INFO - main.service.hybrid_query_service - _register_tool:502 - Registered search_articles tool from medical_mcp
+2026-09-04 22:26:32 - INFO - main.service.hybrid_query_service - _register_tool:502 - Registered get_article_metadata tool from medical_mcp
+2026-09-04 22:26:32 - INFO - main.service.hybrid_query_service - _register_tool:502 - Registered find_related_articles tool from medical_mcp
+2026-09-04 22:26:32 - INFO - main.service.hybrid_query_service - _register_tool:502 - Registered lookup_article_by_citation tool from medical_mcp
+2026-09-04 22:26:32 - INFO - main.service.hybrid_query_service - _register_tool:502 - Registered convert_article_ids tool from medical_mcp
+2026-09-04 22:26:32 - INFO - main.service.hybrid_query_service - _register_tool:502 - Registered get_full_text_article tool from medical_mcp
+2026-09-04 22:26:32 - INFO - main.service.hybrid_query_service - _register_tool:502 - Registered get_copyright_status tool from medical_mcp
+2026-09-04 22:26:32 - INFO - main.service.hybrid_query_service - initialize:530 - agent.tools.available tools=['clinical_sql', 'semantic_search', 'bm25_search', 'hybrid_document_search', 'hf_inference', 'hf_whoami', 'hub_repo_search', 'hub_repo_details', 'hf_fs', 'search_articles', 'get_article_metadata', 'find_related_articles', 'lookup_article_by_citation', 'convert_article_ids', 'get_full_text_article', 'get_copyright_status'] unavailable=[]
+2026-09-04 22:26:32 - INFO - main.service.agent_factory - create_llm:31 - Initializing Azure OpenAI LLM...
+2026-09-04 22:26:32 - INFO - main.service.hybrid_query_service - _create_openai_agent:557 - Creating FunctionAgent with native tool calling
+2026-09-04 22:26:32 - INFO - main.service.agent_service - initialize:35 - Hybrid agent service initialized with 16 available tools
+2026-09-04 22:26:32 - INFO - main.routes.routes - set_agent_service:179 - Agent service initialized in routes. Service: AgentService
+2026-09-04 22:26:32 - INFO - main.app - lifespan:32 - ✓ Agent ready for medical related analysis and query...
+2026-09-04 22:26:32 - INFO - main.app - lifespan:33 - ============================================================

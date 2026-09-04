@@ -975,23 +975,30 @@ Tool-call contract:
         mode = "rag+mcp" if rag_used and mcp_used else "rag" if rag_used else "mcp" if mcp_used else "sql" if sql_used else "none"
         evaluation = self._empty_evaluation(mode)
         errors: list[str] = []
+        rag_task = self._evaluate_rag_evidence(question, answer) if rag_used else None
+        mcp_task = self._evaluate_mcp_evidence(question, answer) if mcp_used else None
+        rag_result, mcp_result = await asyncio.gather(
+            rag_task or asyncio.sleep(0, result=None),
+            mcp_task or asyncio.sleep(0, result=None),
+            return_exceptions=True,
+        )
         if rag_used:
-            try:
-                faithfulness, relevance, rag_confidence = await self._evaluate_rag_evidence(question, answer)
+            if isinstance(rag_result, Exception):
+                logger.warning("RAG answer evaluation failed: %s", rag_result)
+                errors.append(f"RAG evaluation: {rag_result}")
+            else:
+                faithfulness, relevance, rag_confidence = rag_result
                 evaluation.update(
                     faithfulness=faithfulness,
                     relevance=relevance,
                     rag_confidence=rag_confidence,
                 )
-            except Exception as exc:
-                logger.warning("RAG answer evaluation failed: %s", exc)
-                errors.append(f"RAG evaluation: {exc}")
         if mcp_used:
-            try:
-                evaluation["mcp_confidence"] = await self._evaluate_mcp_evidence(question, answer)
-            except Exception as exc:
-                logger.warning("MCP/Hugging Face answer evaluation failed: %s", exc)
-                errors.append(f"MCP evaluation: {exc}")
+            if isinstance(mcp_result, Exception):
+                logger.warning("MCP/Hugging Face answer evaluation failed: %s", mcp_result)
+                errors.append(f"MCP evaluation: {mcp_result}")
+            else:
+                evaluation["mcp_confidence"] = mcp_result
         evaluation["overall_confidence"] = self._combine_confidence(
             evaluation["rag_confidence"], evaluation["mcp_confidence"]
         )
