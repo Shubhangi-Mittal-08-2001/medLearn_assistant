@@ -28,6 +28,7 @@ from main.evaluation.dataset_evaluation import (
     evaluate_answer_relevance,
 )
 from main.handoff.handoff_service import (
+    CONFIDENCE_THRESHOLD,
     evaluate_score,
     send_handoff_email,
     generate_handoff_reference_id,
@@ -425,31 +426,26 @@ async def query_rag(
                     },
                 )
                 trace_id = span.trace_id
-                context = "\n\n".join(
-                    str(node.get("text", ""))
-                    for node in result.source_nodes
-                    if node.get("text")
-                )
-
-                faithfulness = await evaluate_faithfulness_score(
-                    langfuse, trace_id, request.question, context, result.answer
-                )
-                relevance = await evaluate_answer_relevance(
-                    langfuse, trace_id, request.question, result.answer
-                )
+                # HybridQueryService has already evaluated the final answer against
+                # the evidence type actually used. Do not run document evaluators
+                # against MCP/Hugging Face or SQL output here.
+                evaluation = result.evaluation
+                faithfulness = evaluation.get("faithfulness")
+                relevance = evaluation.get("relevance")
 
                 # The agent path is the primary /query path.  Apply the same
                 # handoff decision and delivery logic used by legacy retrieval
                 # before returning its response.
-                try:
-                    confidence_handoff = await evaluate_confidence_score(
-                        answer=result.answer,
-                        question=request.question,
-                        relevant_chunks=result.source_nodes,
-                    )
-                except Exception as exc:
-                    logger.warning("Confidence evaluation unavailable: %s", exc)
-                    confidence_handoff = {"trigger": False, "confidence": 50}
+                overall_confidence = evaluation.get("overall_confidence")
+                confidence_percent = (
+                    round(float(overall_confidence) * 100)
+                    if overall_confidence is not None else None
+                )
+                confidence_handoff = {
+                    "trigger": confidence_percent is not None and confidence_percent < CONFIDENCE_THRESHOLD,
+                    "reason": "source-aware confidence below threshold",
+                    "confidence": confidence_percent,
+                }
                 try:
                     explicit_handoff = await evaluate_explicit_user_request(request.question)
                 except Exception as exc:
@@ -457,19 +453,18 @@ async def query_rag(
                     explicit_handoff = {"trigger": False, "reason": "evaluation unavailable"}
 
                 full_chunks = list(result.source_nodes)
-                successful_operation = "hf_inference" in result.tools_used
-                # Retrieval faithfulness/no-chunk scoring is not meaningful for
-                # successful operational tools such as model inference. Their
-                # returned result is the requested output, not a retrieved node.
+                rag_used = evaluation.get("mode") in {"rag", "rag+mcp"}
+                # Chunk-based handoff scoring applies only when document retrieval
+                # actually contributed evidence.
                 score_based_handoff = (
-                    {"trigger": False, "reason": "successful operational tool result"}
-                    if successful_operation
-                    else evaluate_score(
+                    evaluate_score(
                         faithfulness,
                         relevance,
                         request.question,
                         no_chunks=not full_chunks,
                     )
+                    if rag_used
+                    else {"trigger": False, "reason": "non-RAG source-aware evaluation"}
                 )
                 if explicit_handoff["trigger"]:
                     handoff, priority = explicit_handoff, "high"

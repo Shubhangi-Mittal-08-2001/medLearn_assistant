@@ -48,6 +48,47 @@ evaluation scores, handoff status, and trace ID.
 
 > `.env` is intentionally not included in the packaged backend. Keep secrets local.
 
+## MCP integrations
+
+- `HF_MCP_URL` exposes Hugging Face Hub repository tools; set `HF_TOKEN` to enable it.
+- `MEDICAL_MCP_URL` exposes an external medical API such as a PubMed-capable MCP
+  server. `MCP_SERVER_URL` remains a supported alias. Configure `MEDICAL_MCP_TOKEN`
+  and `MEDICAL_MCP_ALLOWED_TOOLS` when the server requires them.
+
+Hub search neither retrieves medical literature nor executes a model. The separate
+`hf_inference` tool uses Inference Providers. Its fine-grained token must include
+**Make calls to Inference Providers**; otherwise inference returns HTTP 403 even when
+MCP discovery succeeds. `HF_INFERENCE_PROVIDER` defaults to `auto`.
+
+An unavailable MCP server is recorded in `tool_errors`; SQL and local RAG remain usable.
+When `hybrid_document_search` produces an answer below `RAG_FAITHFULNESS_THRESHOLD`
+(default `0.70`), the service retries using only the configured medical MCP tools.
+Hugging Face Hub tools are deliberately excluded from this evidence fallback.
+
+### Run the bundled PubMed + RxNorm MCP server
+
+In one terminal:
+
+```powershell
+cd "A:\Agentic AI\course3-project\medlearn-assistant\backend"
+.\.venv\Scripts\python.exe -m main.medical_mcp_server
+```
+
+In `backend/.env`, configure:
+
+```env
+MEDICAL_MCP_URL=http://127.0.0.1:8010/mcp
+MEDICAL_MCP_ALLOWED_TOOLS=pubmed_search,pubmed_article_details,rxnorm_lookup,rxnorm_concept_details
+RAG_FAITHFULNESS_THRESHOLD=0.70
+NCBI_EMAIL=your-email@example.com
+# NCBI_API_KEY is optional but recommended for higher NCBI request limits.
+```
+
+Then start the MedLearn API in a second terminal. The bundled server provides PubMed
+literature search/details and RxNorm name/RxCUI normalization. RxNav discontinued its
+drug-interaction API in 2024, so questions about interactions or adverse effects must
+use PubMed evidence rather than RxNorm.
+
 ## Supported upload formats
 
 Set the application upload configuration to:

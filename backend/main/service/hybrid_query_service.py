@@ -24,10 +24,12 @@ from sqlalchemy.engine import URL
 
 from main.service.agent_factory import create_llm
 from main.service.fusion_retrieval import FusionRetrievalService
-from main.service.mcp_client import HuggingFaceMCPService, iter_leaf_exceptions, root_exception_message
+from main.service.mcp_client import HuggingFaceMCPService, MedicalMCPService, iter_leaf_exceptions, root_exception_message
 from main.service.query_router import QueryRouter
 from main.service.rag_service import create_vector_store, get_llm, get_query_engine
 from main.tools.custom_tools import custom_inference_tool
+from main.evaluation.dataset_evaluation import evaluate_answer_relevance, evaluate_faithfulness_score
+from main.handoff.handoff_service import evaluate_confidence_score
 from llama_index.llms.openai import utils as openai_utils
 
 load_dotenv()
@@ -41,6 +43,9 @@ SQL_PATTERNS = re.compile(
     r"\b(drug interaction|contraindication|reference range|lab(?:oratory)? value|"
     r"how many|count|density|dose|severity|warfarin|hemoglobin|platelet)\b", re.I
 )
+RAG_TOOLS = {"semantic_search", "bm25_search", "hybrid_document_search"}
+SQL_TOOLS = {"clinical_sql"}
+KNOWN_MCP_TOOLS = {"hf_inference", "hub_repo_search", "hub_repo_details"}
 
 _GPT5_CONTEXT_WINDOWS = {
     "gpt-5": 400000,
@@ -69,6 +74,7 @@ class HybridQueryResult:
     tools_used: list[str] = field(default_factory=list)
     tool_errors: list[dict[str, str]] = field(default_factory=list)
     routing: str = "agent"
+    evaluation: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -77,6 +83,7 @@ class HybridQueryResult:
             "tools_used": self.tools_used,
             "tool_errors": self.tool_errors,
             "routing": self.routing,
+            "evaluation": self.evaluation,
         }
 
 
@@ -138,12 +145,18 @@ class TrackingQueryEngine:
 class TrackingTool:
     """Wraps LlamaIndex tools so MCP/custom tool calls are recorded in the same event stream."""
 
-    def __init__(self, tool: Any, events: list[ToolExecution]):
+    def __init__(
+        self,
+        tool: Any,
+        events: list[ToolExecution],
+        external_evidence: list[dict[str, Any]] | None = None,
+    ):
         self.tool = tool
         self.events = events
         self.metadata = getattr(tool, "metadata", None)
         self.name = getattr(self.metadata, "name", None) or getattr(tool, "name", type(tool).__name__)
         self.__name__ = self.name
+        self.external_evidence = external_evidence
 
     def __getattr__(self, item: str) -> Any:
         return getattr(self.tool, item)
@@ -160,6 +173,7 @@ class TrackingTool:
             error = _response_error(response)
             if error:
                 raise ToolUnavailableError(error)
+            self._record_external_evidence(response)
             self.events.append(ToolExecution(self.name, "success"))
             logger.info("tool.execution.success tool=%s", self.name)
             return response
@@ -181,6 +195,7 @@ class TrackingTool:
             error = _response_error(response)
             if error:
                 raise ToolUnavailableError(error)
+            self._record_external_evidence(response)
             self.events.append(ToolExecution(self.name, "success"))
             logger.info("tool.execution.success tool=%s", self.name)
             return response
@@ -189,6 +204,13 @@ class TrackingTool:
             self.events.append(ToolExecution(self.name, "error", detail))
             _log_tool_exception(self.name, exc)
             raise
+
+    def _record_external_evidence(self, response: Any) -> None:
+        if self.external_evidence is None:
+            return
+        content = _normalize_external_result(response)
+        if content:
+            self.external_evidence.append({"tool": self.name, "content": content})
 
     def _require_search_before_inference(self) -> None:
         """Prevent inference when this request has no successful model search."""
@@ -207,6 +229,16 @@ class TrackingTool:
         """Enforce schemas for tools whose argument names must not be guessed."""
         if args:
             return kwargs
+        kwargs = dict(kwargs)
+        # QueryEngineTool exposes one canonical ``input`` field. Tool-calling
+        # models nevertheless commonly emit ``query``/``question`` and a top_k
+        # hint. Normalize that harmless variation at our boundary; retrieval
+        # depth is owned by each configured query engine, not by the model.
+        if self.name in RAG_TOOLS | SQL_TOOLS and "input" not in kwargs:
+            aliases = [name for name in ("query", "question") if name in kwargs]
+            if len(aliases) == 1:
+                kwargs["input"] = kwargs.pop(aliases[0])
+            kwargs.pop("top_k", None)
         schema_model = getattr(self.metadata, "fn_schema", None)
         if schema_model is None:
             return kwargs
@@ -278,6 +310,33 @@ def _response_error(response: Any) -> str | None:
         messages = [str(getattr(item, "text", item)) for item in content]
         return "; ".join(messages) or "MCP tool returned an error"
     return str(content or "MCP tool returned an error")
+
+
+def _normalize_external_result(response: Any, limit: int = 12_000) -> str:
+    """Create bounded evaluator input without traversing framework/session state."""
+    value = getattr(response, "raw_output", response)
+    if hasattr(value, "model_dump"):
+        value = value.model_dump()
+    elif not isinstance(value, (str, int, float, bool, list, tuple, dict, type(None))):
+        content = getattr(value, "content", None)
+        value = content if content is not None else str(value)
+
+    def sanitize(item: Any) -> Any:
+        if isinstance(item, dict):
+            return {
+                str(key): "[REDACTED]" if any(secret in str(key).lower() for secret in _SECRET_ARGUMENT_KEYS) else sanitize(val)
+                for key, val in item.items()
+            }
+        if isinstance(item, (list, tuple)):
+            return [sanitize(entry) for entry in item[:100]]
+        if isinstance(item, (str, int, float, bool)) or item is None:
+            return item
+        text = getattr(item, "text", None)
+        return text if isinstance(text, str) else str(item)
+
+    normalized = sanitize(value)
+    text = normalized if isinstance(normalized, str) else json.dumps(normalized, ensure_ascii=False, default=str)
+    return text[:limit]
 
 
 def _log_tool_exception(tool_name: str, exc: BaseException) -> None:
@@ -359,9 +418,12 @@ class HybridQueryService:
 independent information sources. Identify the user's information requirements, then
 select exactly the tool or tools that satisfy them before answering. Uploaded or
 indexed textbook content uses semantic_search, bm25_search, or
-hybrid_document_search. Structured clinical records use clinical_sql. Hugging Face
-MCP tools and hf_inference are first-class tools for information or model operations
-the user asks to obtain from Hugging Face; they are not fallbacks.
+hybrid_document_search. Structured clinical records use clinical_sql. Pass the user's
+natural-language question to any of these four tools using the single argument `input`;
+do not pass `query`, `question`, or `top_k`. Hugging Face MCP tools and hf_inference are for Hugging Face repository/model
+operations; they are not medical evidence sources. Tools from the configured medical
+MCP server are external medical evidence sources and may be used for current external
+evidence or when local textbook/database evidence is insufficient.
 
 For a multi-source request, call every required source and synthesize all successful
 results. Issue independent calls together so the runtime can execute them in
@@ -378,7 +440,10 @@ its metadata is necessary to choose a search result or confirm inference availab
 its repo_ids argument must be a non-empty list of repository IDs. Prefer candidates with
 a live Hugging Face inference provider. For hub_repo_search, use only its discovered
 schema: repo_types=["model"], filters=["text-classification", "language:en"] and
-sort="downloads" are valid; pipeline_tag and language are not fields. Never claim a source is unavailable unless its
+sort="downloads" are valid; pipeline_tag and language are not fields. When the user
+requests a biomedical or clinical model, include an explicit biomedical/clinical query
+instead of browsing all text-classification models. Reject unrelated-language, GGUF,
+generation, or non-medical results rather than running them. Never claim a source is unavailable unless its
 tool returned an error. State when evidence is insufficient and never expose PII."""
 
     DATA_TOOLS = {"clinical_sql", "semantic_search", "bm25_search", "hybrid_document_search"}
@@ -388,6 +453,9 @@ tool returned an error. State when evidence is insufficient and never expose PII
         self.tools: list[Any] = []
         self.events: list[ToolExecution] = []
         self.source_nodes: list[dict[str, Any]] = []
+        self.external_evidence: list[dict[str, Any]] = []
+        self.tool_sources: dict[str, str] = {}
+        self.tool_origins: dict[str, str] = {}
         self.initialization_errors: list[ToolExecution] = []
         self._initialized = False
 
@@ -403,12 +471,28 @@ tool returned an error. State when evidence is insufficient and never expose PII
     def _register_tool(self, tool: Any, source: str) -> None:
         if tool is None:
             return
-        wrapped_tool = TrackingTool(tool, self.events) if not isinstance(tool, TrackingTool) else tool
+        original_name = self._tool_name(tool)
+        evaluation_source = (
+            "rag" if original_name in RAG_TOOLS else
+            "sql" if original_name in SQL_TOOLS else
+            "mcp" if source in {"huggingface_mcp", "medical_mcp", "custom_tool"} else
+            "other"
+        )
+        wrapped_tool = (
+            TrackingTool(
+                tool,
+                self.events,
+                self.external_evidence if evaluation_source == "mcp" else None,
+            )
+            if not isinstance(tool, TrackingTool) else tool
+        )
         tool_name = self._tool_name(wrapped_tool)
         if any(self._tool_name(existing) == tool_name for existing in self.tools):
             logger.debug("Tool %s already registered from %s; skipping duplicate registration", tool_name, source)
             return
         self.tools.append(wrapped_tool)
+        self.tool_sources[tool_name] = evaluation_source
+        self.tool_origins[tool_name] = source
         logger.info("Registered %s tool from %s", tool_name, source)
 
     async def initialize(self) -> None:
@@ -416,18 +500,28 @@ tool returned an error. State when evidence is insufficient and never expose PII
             return
         self.events = []
         self.tools = []
+        self.tool_sources = {}
+        self.tool_origins = {}
         for tool in create_query_engine_tools(self.events, self.source_nodes):
             self._register_tool(tool, "data_tools")
         # Local HF inference is independently useful and must not depend on MCP
         # discovery or on document/embedding initialization.
         self._register_tool(custom_inference_tool, "custom_tool")
-        try:
-            mcp_tools = await HuggingFaceMCPService().load_tools()
-            for tool in mcp_tools:
-                self._register_tool(tool, "mcp")
-        except Exception as exc:
-            self.events.append(ToolExecution("huggingface_mcp", "unavailable", str(exc)))
-            logger.warning("Hugging Face MCP unavailable; continuing with local tools: %s", exc)
+        if os.getenv("HF_TOKEN"):
+            try:
+                for tool in await HuggingFaceMCPService().load_tools():
+                    self._register_tool(tool, "huggingface_mcp")
+            except Exception as exc:
+                self.events.append(ToolExecution("huggingface_mcp", "unavailable", str(exc)))
+                logger.warning("Hugging Face MCP unavailable; continuing with local tools: %s", exc)
+        medical_mcp = MedicalMCPService.from_environment()
+        if medical_mcp is not None:
+            try:
+                for tool in await medical_mcp.load_tools():
+                    self._register_tool(tool, "medical_mcp")
+            except Exception as exc:
+                self.events.append(ToolExecution("medical_mcp", "unavailable", str(exc)))
+                logger.warning("Medical MCP unavailable; continuing with other tools: %s", exc)
         self.initialization_errors = list(self.events)
         logger.info(
             "agent.tools.available tools=%s unavailable=%s",
@@ -470,12 +564,15 @@ tool returned an error. State when evidence is insufficient and never expose PII
         # place instead of rebinding it for each request.
         self.events[:] = self.initialization_errors
         self.source_nodes.clear()
+        self.external_evidence.clear()
         if self.agent is not None:
             try:
                 # Workflow.run() takes StartEvent kwargs. A positional string is
                 # treated as ctx (or dropped), so the model never sees the question.
                 response = await self.agent.run(user_msg=question)
-                result = self._result(question, str(response), "agent")
+                answer = await self._complete_requested_hf_inference(question, str(response))
+                result = await self._build_result(question, answer, "agent")
+                result = await self._redirect_low_faithfulness_to_medical_mcp(question, result)
                 if not result.tools_used and not result.tool_errors:
                     logger.warning("Agent returned without invoking a tool; running intent-routed fallback")
                     return await self._fallback(question)
@@ -488,6 +585,196 @@ tool returned an error. State when evidence is insufficient and never expose PII
                 self.events.append(ToolExecution("agent", "error", str(exc)))
         return await self._fallback(question)
 
+    async def _redirect_low_faithfulness_to_medical_mcp(
+        self, question: str, result: HybridQueryResult
+    ) -> HybridQueryResult:
+        """Retry a weak hybrid-document answer using only medical MCP tools."""
+        threshold = float(os.getenv("RAG_FAITHFULNESS_THRESHOLD", "0.70"))
+        threshold = min(max(threshold, 0.0), 1.0)
+        faithfulness = result.evaluation.get("faithfulness")
+        if (
+            "hybrid_document_search" not in result.tools_used
+            or not isinstance(faithfulness, (int, float))
+            or faithfulness >= threshold
+            or any(self.tool_origins.get(name) == "medical_mcp" for name in result.tools_used)
+        ):
+            return result
+
+        medical_tools = [
+            tool for tool in self.tools
+            if self.tool_origins.get(self._tool_name(tool)) == "medical_mcp"
+        ]
+        if not medical_tools:
+            logger.info(
+                "Low RAG faithfulness %.3f < %.3f, but no medical MCP tools are configured",
+                faithfulness,
+                threshold,
+            )
+            return result
+
+        names = [self._tool_name(tool) for tool in medical_tools]
+        logger.info(
+            "Low RAG faithfulness %.3f < %.3f; redirecting to medical MCP tools=%s",
+            faithfulness,
+            threshold,
+            names,
+        )
+        successful_before = {
+            event.name for event in self.events if event.status == "success"
+        }
+        try:
+            medical_agent = self._create_openai_agent(medical_tools)
+            response = await medical_agent.run(user_msg=(
+                "The local hybrid document answer did not meet the faithfulness threshold. "
+                f"Answer this medical-education question using the most suitable available "
+                f"external medical MCP tool ({', '.join(names)}). You must call a tool before "
+                f"answering, cite source identifiers or links returned by it, and state when "
+                f"the external evidence is insufficient. Question: {question}"
+            ))
+        except Exception as exc:
+            logger.warning("Medical MCP low-faithfulness retry failed: %s", exc)
+            self.events.append(ToolExecution("medical_mcp_retry", "error", str(exc)))
+            return await self._build_result(question, result.answer, "agent")
+
+        successful_after = {
+            event.name for event in self.events
+            if event.status == "success" and self.tool_origins.get(event.name) == "medical_mcp"
+        }
+        if not successful_after - successful_before:
+            logger.warning("Medical MCP retry returned without successfully calling a medical tool")
+            return await self._build_result(question, result.answer, "agent")
+        return await self._build_result(question, str(response), "agent:mcp_fallback")
+
+    async def _complete_requested_hf_inference(self, question: str, answer: str) -> str:
+        """Finish an explicit search-then-classify request if the agent stops after search."""
+        successful = {event.name for event in self.events if event.status == "success"}
+        wants_inference = bool(re.search(r"\b(?:classify|classification|run|infer(?:ence)?)\b", question, re.I))
+        if not wants_inference or "hub_repo_search" not in successful or "hf_inference" in successful:
+            return answer
+
+        inference_text = self._classification_text(question)
+        inference_tool = next(
+            (tool for tool in self.tools if self._tool_name(tool) == "hf_inference"), None
+        )
+        candidates = self._medical_model_ids(self._model_ids_from_search_evidence())
+        if not candidates:
+            await self._search_for_medical_classifiers()
+            candidates = self._medical_model_ids(self._model_ids_from_search_evidence())
+        if not candidates or not inference_text or inference_tool is None:
+            logger.warning(
+                "Unable to complete requested HF inference candidates_found=%s text_found=%s tool_available=%s",
+                bool(candidates), bool(inference_text), inference_tool is not None,
+            )
+            if inference_text:
+                return self._medical_classification_fallback(
+                    inference_text,
+                    "No suitable hosted biomedical classifier was returned by Hugging Face search.",
+                )
+            return answer
+        last_failure = "No hosted candidate completed inference."
+        for model_id in candidates[:5]:
+            try:
+                output = await inference_tool.acall(model_id=model_id, text=inference_text)
+                logger.info("Completed requested search-then-inference sequence with model=%s", model_id)
+                return f"Model: {model_id}\n\nClassification result:\n{output}"
+            except Exception as exc:
+                logger.warning("Requested HF inference failed model=%s error=%s", model_id, exc)
+                detail = root_exception_message(exc)
+                last_failure = f"`{model_id}` was unavailable through the configured inference provider."
+                if "403" in detail or "sufficient permissions" in detail.lower():
+                    return self._medical_classification_fallback(
+                        inference_text,
+                        f"Hugging Face found `{model_id}`, but its inference endpoint rejected the configured token.",
+                    )
+        return self._medical_classification_fallback(inference_text, last_failure)
+
+    def _model_ids_from_search_evidence(self) -> list[str]:
+        search_content = "\n".join(
+            str(item.get("content", ""))
+            for item in self.external_evidence
+            if item.get("tool") == "hub_repo_search"
+        )
+        patterns = (
+            r'"(?:repo_id|modelId|id)"\s*:\s*"([\w.-]+/[\w.-]+)"',
+            r"https?://huggingface\.co/([\w.-]+/[\w.-]+)",
+            r"\b([\w.-]+/[\w.-]+)\b",
+        )
+        candidates: list[str] = []
+        for pattern in patterns:
+            candidates.extend(re.findall(pattern, search_content))
+        return list(dict.fromkeys(candidates))
+
+    @staticmethod
+    def _best_medical_model_id(candidates: list[str]) -> str | None:
+        suitable = HybridQueryService._medical_model_ids(candidates)
+        return suitable[0] if suitable else None
+
+    @staticmethod
+    def _medical_model_ids(candidates: list[str]) -> list[str]:
+        medical_terms = (
+            "biomed", "medical", "clinical", "health", "disease", "symptom",
+            "biobert", "medbert", "pubmed", "pathology", "radiology", "pharma",
+        )
+        unsuitable_terms = ("gguf", "pashto", "urdu", "arabic", "translation", "generation")
+        return [
+            model_id for model_id in candidates
+            if any(term in model_id.lower() for term in medical_terms)
+            and not any(term in model_id.lower() for term in unsuitable_terms)
+        ]
+
+    async def _search_for_medical_classifiers(self) -> None:
+        search_tool = next(
+            (tool for tool in self.tools if self._tool_name(tool) == "hub_repo_search"), None
+        )
+        if search_tool is None:
+            return
+        searches = (
+            ("biomedical clinical text classification", ["text-classification"]),
+            ("clinical symptom classification", ["text-classification"]),
+            ("medical text classifier", ["text-classification"]),
+        )
+        for query, filters in searches:
+            try:
+                await search_tool.acall(
+                    query=query,
+                    repo_types=["model"],
+                    filters=filters,
+                    sort="downloads",
+                    limit=10,
+                )
+                if self._best_medical_model_id(self._model_ids_from_search_evidence()):
+                    return
+            except Exception as exc:
+                logger.warning("Focused biomedical model search failed query=%s error=%s", query, exc)
+
+    @staticmethod
+    def _medical_classification_fallback(text: str, external_status: str) -> str:
+        lowered = text.lower()
+        symptoms = [term for term in ("chest pain", "shortness of breath", "fever", "headache") if term in lowered]
+        severity = next((term for term in ("severe", "moderate", "mild") if term in lowered), "unspecified")
+        symptom_label = ", ".join(symptoms) if symptoms else "medical symptom statement"
+        urgent = severity == "severe" or "chest pain" in symptoms
+        urgency = "potential emergency / urgent assessment" if urgent else "clinical assessment advised"
+        return (
+            "Classification (rule-based fallback; not a Hugging Face model output):\n"
+            f"- Input: {text}\n"
+            f"- Symptom: {symptom_label}\n"
+            f"- Severity: {severity}\n"
+            "- Clinical intent: current symptom report\n"
+            f"- Urgency: {urgency}\n\n"
+            f"External-model status: {external_status} "
+            "This fallback is for educational text classification and is not a diagnosis."
+        )
+
+    @staticmethod
+    def _classification_text(question: str) -> str | None:
+        matches = list(re.finditer(
+            r"\bclassify(?:\s+(?:this\s+)?sentence)?\s*[:\-]?\s*[\"']?(.+?)[\"']?\s*$",
+            question,
+            re.I,
+        ))
+        return matches[-1].group(1).strip(" \"'") if matches else None
+
     async def _fallback(self, question: str) -> HybridQueryResult:
         """Degrade gracefully when model/tool calling cannot run; never hide tool errors."""
         analysis = QueryRouter.analyze(question)
@@ -497,15 +784,15 @@ tool returned an error. State when evidence is insufficient and never expose PII
         )
         tool = next((item for item in self.tools if getattr(item.metadata, "name", "") == preferred), None)
         if tool is None:
-            return self._result(question, "The requested data source is currently unavailable. Please try again later.", "fallback")
+            return await self._build_result(question, "The requested data source is currently unavailable. Please try again later.", "fallback")
         try:
             response = await asyncio.to_thread(tool.call, question)
-            return self._result(question, str(response), "fallback")
+            return await self._build_result(question, str(response), "fallback")
         except Exception as exc:
             self.events.append(ToolExecution(preferred, "error", str(exc)))
-            return self._result(question, "I could not complete that query because the selected data source failed.", "fallback")
+            return await self._build_result(question, "I could not complete that query because the selected data source failed.", "fallback")
 
-    def _result(self, question: str, answer: str, routing: str) -> HybridQueryResult:
+    def _collect_execution(self, routing: str) -> tuple[list[str], list[dict[str, str]], str]:
         used = list(dict.fromkeys(event.name for event in self.events if event.status == "success"))
         errors = []
         seen_errors: set[tuple[str, str]] = set()
@@ -514,11 +801,115 @@ tool returned an error. State when evidence is insufficient and never expose PII
                 continue
             key = (event.name, event.detail or event.status)
             if key not in seen_errors:
-                errors.append({"tool": key[0], "message": key[1]})
+                errors.append({"tool": key[0], "message": self._public_tool_error(key[1])})
                 seen_errors.add(key)
         actual_routing = f"{routing}:{'+'.join(used)}" if used else routing
         logger.info(
             "query.result.collected routing=%s tools_used=%s tool_error_count=%d source_count=%d",
             actual_routing, used, len(errors), len(self.source_nodes),
         )
-        return HybridQueryResult(question, answer, list(self.source_nodes), used, errors, actual_routing)
+        return used, errors, actual_routing
+
+    @staticmethod
+    def _public_tool_error(detail: str) -> str:
+        """Return an actionable error without leaking provider URLs or account metadata."""
+        lowered = detail.lower()
+        if "403" in detail or "sufficient permissions" in lowered:
+            return (
+                "Hugging Face rejected inference because the configured token lacks "
+                "Inference Providers permission."
+            )
+        return detail[:1_000]
+
+    async def _build_result(self, question: str, answer: str, routing: str) -> HybridQueryResult:
+        used, errors, actual_routing = self._collect_execution(routing)
+        evaluation = await self._evaluate_result(question, answer, used)
+        return HybridQueryResult(
+            question, answer, list(self.source_nodes), used, errors, actual_routing, evaluation
+        )
+
+    def _evaluation_source_for_tool(self, tool_name: str) -> str:
+        if tool_name in RAG_TOOLS:
+            return "rag"
+        if tool_name in SQL_TOOLS:
+            return "sql"
+        if tool_name in KNOWN_MCP_TOOLS:
+            return "mcp"
+        return self.tool_sources.get(tool_name, "other")
+
+    @staticmethod
+    def _empty_evaluation(mode: str) -> dict[str, Any]:
+        return {
+            "mode": mode,
+            "faithfulness": None,
+            "relevance": None,
+            "rag_confidence": None,
+            "mcp_relevance": None,
+            "mcp_confidence": None,
+            "overall_confidence": None,
+            "evaluation_error": None,
+        }
+
+    @staticmethod
+    def _combine_confidence(
+        rag_confidence: float | None, mcp_confidence: float | None
+    ) -> float | None:
+        scores = [score for score in (rag_confidence, mcp_confidence) if score is not None]
+        return sum(scores) / len(scores) if scores else None
+
+    async def _evaluate_rag_evidence(self, question: str, answer: str) -> tuple[float, float, float]:
+        class _ScoreSink:
+            def create_score(self, **_: Any) -> None:
+                return None
+
+        context = "\n\n".join(
+            str(node.get("text", "")) for node in self.source_nodes if node.get("text")
+        )
+        trace_id = "hybrid-query-evaluation"
+        faithfulness, relevance = await asyncio.gather(
+            evaluate_faithfulness_score(_ScoreSink(), trace_id, question, context, answer),
+            evaluate_answer_relevance(_ScoreSink(), trace_id, question, answer),
+        )
+        return faithfulness, relevance, (faithfulness + relevance) / 2
+
+    async def _evaluate_mcp_evidence(self, question: str, answer: str) -> float:
+        usable = [
+            evidence for evidence in self.external_evidence
+            if evidence.get("tool") in {event.name for event in self.events if event.status == "success"}
+        ]
+        if not usable:
+            raise ValueError("No successful MCP/Hugging Face evidence was captured")
+        usable.sort(key=lambda evidence: evidence.get("tool") != "hf_inference")
+        confidence = await evaluate_confidence_score(answer, question, usable)
+        return float(confidence["confidence"]) / 100.0
+
+    async def _evaluate_result(
+        self, question: str, answer: str, tools_used: list[str]
+    ) -> dict[str, Any]:
+        categories = {self._evaluation_source_for_tool(tool) for tool in tools_used}
+        rag_used, mcp_used, sql_used = "rag" in categories, "mcp" in categories, "sql" in categories
+        mode = "rag+mcp" if rag_used and mcp_used else "rag" if rag_used else "mcp" if mcp_used else "sql" if sql_used else "none"
+        evaluation = self._empty_evaluation(mode)
+        errors: list[str] = []
+        if rag_used:
+            try:
+                faithfulness, relevance, rag_confidence = await self._evaluate_rag_evidence(question, answer)
+                evaluation.update(
+                    faithfulness=faithfulness,
+                    relevance=relevance,
+                    rag_confidence=rag_confidence,
+                )
+            except Exception as exc:
+                logger.warning("RAG answer evaluation failed: %s", exc)
+                errors.append(f"RAG evaluation: {exc}")
+        if mcp_used:
+            try:
+                evaluation["mcp_confidence"] = await self._evaluate_mcp_evidence(question, answer)
+            except Exception as exc:
+                logger.warning("MCP/Hugging Face answer evaluation failed: %s", exc)
+                errors.append(f"MCP evaluation: {exc}")
+        evaluation["overall_confidence"] = self._combine_confidence(
+            evaluation["rag_confidence"], evaluation["mcp_confidence"]
+        )
+        evaluation["evaluation_error"] = "; ".join(errors) or None
+        return evaluation

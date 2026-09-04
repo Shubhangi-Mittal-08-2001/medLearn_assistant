@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 from pydantic import BaseModel, ConfigDict
 
 from main.service.hybrid_query_service import (
+    HybridQueryResult,
     HybridQueryService,
     TrackingTool,
     TrackingQueryEngine,
@@ -26,7 +27,24 @@ class RepoSearchInput(BaseModel):
     limit: int = 20
 
 
+class QueryEngineInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    input: str
+
+
 class TrackingToolTests(unittest.IsolatedAsyncioTestCase):
+    async def test_document_tool_normalizes_query_and_ignores_top_k(self):
+        inner = MagicMock()
+        inner.metadata.name = "hybrid_document_search"
+        inner.metadata.fn_schema = QueryEngineInput
+        inner.acall = AsyncMock(return_value="document evidence")
+        tool = TrackingTool(inner, [])
+
+        result = await tool.acall(query="long-term GLP-1 effects", top_k=5)
+
+        self.assertEqual(result, "document evidence")
+        inner.acall.assert_awaited_once_with(input="long-term GLP-1 effects")
+
     async def test_hf_inference_uses_only_canonical_arguments(self):
         search_result = {"repo_id": "test-org/medical-classifier"}
         events = [ToolExecution("hub_repo_search", "success")]
@@ -174,6 +192,73 @@ class TrackingQueryEngineTests(unittest.TestCase):
 
 
 class AgentRoutingTrackingTests(unittest.IsolatedAsyncioTestCase):
+    def test_medical_model_selection_rejects_irrelevant_language_and_gguf(self):
+        candidates = [
+            "mradermacher/ZamAI-Sentiment-Pashto-GGUF",
+            "tasal9/ZamAI-Sentiment-Pashto",
+            "medical-org/clinical-symptom-classifier",
+        ]
+
+        selected = HybridQueryService._best_medical_model_id(candidates)
+
+        self.assertEqual(selected, "medical-org/clinical-symptom-classifier")
+
+    async def test_explicit_classification_continues_from_search_to_inference(self):
+        service = HybridQueryService()
+        service.events[:] = [ToolExecution("hub_repo_search", "success")]
+        service.external_evidence[:] = [{
+            "tool": "hub_repo_search",
+            "content": '{"id":"medical-org/chest-pain-classifier"}',
+        }]
+        inference = MagicMock()
+        inference.metadata.name = "hf_inference"
+
+        async def run_inference(**kwargs):
+            service.events.append(ToolExecution("hf_inference", "success"))
+            return '[{"label":"urgent","score":0.97}]'
+
+        inference.acall = AsyncMock(side_effect=run_inference)
+        service.tools = [inference]
+
+        answer = await service._complete_requested_hf_inference(
+            "Find a biomedical text classification model and use it to classify this sentence The patient has severe chest pain",
+            "Search-only answer",
+        )
+
+        inference.acall.assert_awaited_once_with(
+            model_id="medical-org/chest-pain-classifier",
+            text="The patient has severe chest pain",
+        )
+        self.assertIn("Classification result", answer)
+        self.assertEqual(service.events[-1], ToolExecution("hf_inference", "success"))
+
+    async def test_unsupported_provider_candidate_retries_next_medical_model(self):
+        service = HybridQueryService()
+        service.events[:] = [ToolExecution("hub_repo_search", "success")]
+        service.external_evidence[:] = [{
+            "tool": "hub_repo_search",
+            "content": (
+                '{"id":"medical-org/unsupported-clinical-model"},'
+                '{"id":"biomed-org/hosted-classifier"}'
+            ),
+        }]
+        inference = MagicMock()
+        inference.metadata.name = "hf_inference"
+        inference.acall = AsyncMock(side_effect=[
+            RuntimeError("Model not supported by provider hf-inference"),
+            '[{"label":"urgent","score":0.97}]',
+        ])
+        service.tools = [inference]
+
+        answer = await service._complete_requested_hf_inference(
+            "Find a biomedical model and classify this sentence The patient has severe chest pain",
+            "search answer",
+        )
+
+        self.assertEqual(inference.acall.await_count, 2)
+        self.assertIn("biomed-org/hosted-classifier", answer)
+        self.assertIn("Classification result", answer)
+
     async def test_hf_search_then_inference_success(self):
         service = HybridQueryService()
         service._initialized = True
@@ -264,6 +349,188 @@ class AgentRoutingTrackingTests(unittest.IsolatedAsyncioTestCase):
             result.tool_errors,
             [{"tool": "model_search", "message": "HF temporarily unavailable"}],
         )
+
+
+class SourceAwareEvaluationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_low_hybrid_faithfulness_redirects_to_medical_mcp(self):
+        service = HybridQueryService()
+        medical_tool = MagicMock()
+        medical_tool.metadata.name = "pubmed_search"
+        service.tools = [medical_tool]
+        service.tool_origins = {"pubmed_search": "medical_mcp"}
+        service.tool_sources = {"pubmed_search": "mcp"}
+        service.events[:] = [ToolExecution("hybrid_document_search", "success")]
+        initial = HybridQueryResult(
+            "question", "weak local answer", [], ["hybrid_document_search"], [],
+            "agent:hybrid_document_search", {"faithfulness": 0.4},
+        )
+
+        async def run_medical_agent(**kwargs):
+            service.events.append(ToolExecution("pubmed_search", "success"))
+            service.external_evidence.append({"tool": "pubmed_search", "content": "PMID:123"})
+            return "Externally supported answer (PMID:123)"
+
+        agent = MagicMock()
+        agent.run = AsyncMock(side_effect=run_medical_agent)
+        service._create_openai_agent = MagicMock(return_value=agent)
+        service._evaluate_result = AsyncMock(return_value={"faithfulness": 0.8, "mode": "rag+mcp"})
+
+        result = await service._redirect_low_faithfulness_to_medical_mcp("question", initial)
+
+        service._create_openai_agent.assert_called_once_with([medical_tool])
+        self.assertIn("Externally supported", result.answer)
+        self.assertEqual(result.tools_used, ["hybrid_document_search", "pubmed_search"])
+
+    async def test_low_faithfulness_does_not_use_hugging_face_as_medical_evidence(self):
+        service = HybridQueryService()
+        hf_tool = MagicMock()
+        hf_tool.metadata.name = "hub_repo_search"
+        service.tools = [hf_tool]
+        service.tool_origins = {"hub_repo_search": "huggingface_mcp"}
+        initial = HybridQueryResult(
+            "question", "weak local answer", [], ["hybrid_document_search"], [],
+            "agent:hybrid_document_search", {"faithfulness": 0.2},
+        )
+        service._create_openai_agent = MagicMock()
+
+        result = await service._redirect_low_faithfulness_to_medical_mcp("question", initial)
+
+        self.assertIs(result, initial)
+        service._create_openai_agent.assert_not_called()
+
+    async def test_each_document_tool_uses_only_rag_evaluation(self):
+        for tool_name in ("semantic_search", "bm25_search", "hybrid_document_search"):
+            with self.subTest(tool=tool_name):
+                service = HybridQueryService()
+                service.source_nodes[:] = [{"text": "document evidence"}]
+                service._evaluate_rag_evidence = AsyncMock(return_value=(0.8, 0.6, 0.7))
+                service._evaluate_mcp_evidence = AsyncMock()
+
+                evaluation = await service._evaluate_result("question", "answer", [tool_name])
+
+                self.assertEqual(evaluation["mode"], "rag")
+                self.assertEqual(evaluation["faithfulness"], 0.8)
+                self.assertEqual(evaluation["relevance"], 0.6)
+                self.assertEqual(evaluation["rag_confidence"], 0.7)
+                self.assertEqual(evaluation["overall_confidence"], 0.7)
+                service._evaluate_rag_evidence.assert_awaited_once_with("question", "answer")
+                service._evaluate_mcp_evidence.assert_not_awaited()
+
+    async def test_mcp_only_skips_rag_metrics(self):
+        service = HybridQueryService()
+        service._evaluate_rag_evidence = AsyncMock()
+        service._evaluate_mcp_evidence = AsyncMock(return_value=0.86)
+
+        evaluation = await service._evaluate_result(
+            "question", "answer", ["hub_repo_search", "hf_inference"]
+        )
+
+        self.assertEqual(evaluation["mode"], "mcp")
+        self.assertIsNone(evaluation["faithfulness"])
+        self.assertIsNone(evaluation["relevance"])
+        self.assertEqual(evaluation["overall_confidence"], 0.86)
+        service._evaluate_rag_evidence.assert_not_awaited()
+
+    async def test_mixed_evaluates_sources_independently(self):
+        service = HybridQueryService()
+        service._evaluate_rag_evidence = AsyncMock(return_value=(0.9, 0.8, 0.85))
+        service._evaluate_mcp_evidence = AsyncMock(return_value=0.95)
+
+        evaluation = await service._evaluate_result(
+            "question", "answer", ["semantic_search", "hub_repo_search", "hf_inference"]
+        )
+
+        self.assertEqual(evaluation["mode"], "rag+mcp")
+        self.assertEqual(evaluation["rag_confidence"], 0.85)
+        self.assertEqual(evaluation["mcp_confidence"], 0.95)
+        self.assertAlmostEqual(evaluation["overall_confidence"], 0.9)
+
+    async def test_sql_and_none_do_not_run_evaluators(self):
+        for tools_used, expected_mode in ((["clinical_sql"], "sql"), ([], "none")):
+            service = HybridQueryService()
+            service._evaluate_rag_evidence = AsyncMock()
+            service._evaluate_mcp_evidence = AsyncMock()
+
+            evaluation = await service._evaluate_result("question", "answer", tools_used)
+
+            self.assertEqual(evaluation["mode"], expected_mode)
+            self.assertIsNone(evaluation["overall_confidence"])
+            service._evaluate_rag_evidence.assert_not_awaited()
+            service._evaluate_mcp_evidence.assert_not_awaited()
+
+    async def test_failed_inference_is_not_usable_evidence(self):
+        service = HybridQueryService()
+        service.events[:] = [
+            ToolExecution("hub_repo_search", "success"),
+            ToolExecution("hf_inference", "error", "inference failed"),
+        ]
+        service.external_evidence[:] = [
+            {"tool": "hub_repo_search", "content": "model search result"},
+            {"tool": "hf_inference", "content": "stale result"},
+        ]
+        confidence = AsyncMock(return_value={"confidence": 80})
+
+        from unittest.mock import patch
+        with patch("main.service.hybrid_query_service.evaluate_confidence_score", confidence):
+            score = await service._evaluate_mcp_evidence("question", "answer")
+
+        self.assertEqual(score, 0.8)
+        evidence = confidence.await_args.args[2]
+        self.assertEqual([item["tool"] for item in evidence], ["hub_repo_search"])
+
+    async def test_execute_clears_both_evidence_collections(self):
+        service = HybridQueryService()
+        service._initialized = True
+        service.initialization_errors = []
+        service.source_nodes[:] = [{"text": "old RAG"}]
+        service.external_evidence[:] = [{"tool": "hf_inference", "content": "old MCP"}]
+        service.agent = MagicMock()
+        service.agent.run = AsyncMock(return_value="answer")
+        service._fallback = AsyncMock(return_value=MagicMock())
+
+        await service.execute("new question")
+
+        self.assertEqual(service.source_nodes, [])
+        self.assertEqual(service.external_evidence, [])
+
+    async def test_permission_failure_returns_truthful_non_handoff_answer(self):
+        service = HybridQueryService()
+        service.events[:] = [ToolExecution("hub_repo_search", "success")]
+        service.external_evidence[:] = [{
+            "tool": "hub_repo_search",
+            "content": '{"id":"medical-org/clinical-classifier"}',
+        }]
+        inference = MagicMock()
+        inference.metadata.name = "hf_inference"
+        inference.acall = AsyncMock(side_effect=RuntimeError("403 Forbidden: insufficient permissions"))
+        service.tools = [inference]
+
+        answer = await service._complete_requested_hf_inference(
+            "Find a biomedical model and classify this sentence The patient has severe chest pain",
+            "agent stopped after search",
+        )
+
+        self.assertIn("rule-based fallback", answer)
+        self.assertIn("not a Hugging Face model output", answer)
+        self.assertIn("potential emergency", answer)
+        self.assertNotIn("escalated", answer)
+
+    async def test_no_matching_model_returns_direct_classification_not_options(self):
+        service = HybridQueryService()
+        service.events[:] = [ToolExecution("hub_repo_search", "success")]
+        service.external_evidence[:] = [{
+            "tool": "hub_repo_search",
+            "content": '{"id":"tasal9/ZamAI-Sentiment-Pashto"}',
+        }]
+
+        answer = await service._complete_requested_hf_inference(
+            "Find a biomedical model and classify this sentence The patient has severe chest pain",
+            "Which option do you want?",
+        )
+
+        self.assertIn("Symptom: chest pain", answer)
+        self.assertIn("Severity: severe", answer)
+        self.assertNotIn("Which option", answer)
 
 
 if __name__ == "__main__":

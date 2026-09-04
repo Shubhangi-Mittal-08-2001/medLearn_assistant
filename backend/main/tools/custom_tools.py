@@ -100,8 +100,9 @@ def _call_with_hub_client(model_id: str, text: str) -> str:
     # hf-inference is Hugging Face's own hosted inference provider and can
     # evaluate the selected repository directly (or return an actionable HTTP
     # error when that repository is not hosted).
-    provider = os.getenv("HF_INFERENCE_PROVIDER", "hf-inference")
-    client = InferenceClient(token=hf_token, provider=provider)
+    provider = os.getenv("HF_INFERENCE_PROVIDER", "auto")
+    timeout = float(os.getenv("HF_INFERENCE_TIMEOUT", "30"))
+    client = InferenceClient(token=hf_token, provider=provider, timeout=timeout)
     logger.debug(f"[HF_HUB_CLIENT] InferenceClient initialized successfully")
     
     try:

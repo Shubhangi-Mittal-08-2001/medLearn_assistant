@@ -7,7 +7,7 @@ import pytest
 from main.tools.custom_tools import _call_with_hub_client, hf_inference_api
 
 
-def test_hf_inference_uses_explicit_hugging_face_provider(monkeypatch):
+def test_hf_inference_uses_auto_provider(monkeypatch):
     monkeypatch.setenv("HF_TOKEN", "test-token")
     client = MagicMock()
     client.text_classification.return_value = [SimpleNamespace(label="LABEL_1", score=0.9)]
@@ -17,7 +17,7 @@ def test_hf_inference_uses_explicit_hugging_face_provider(monkeypatch):
             "test-org/medical-classifier", "The patient has severe chest pain."
         ))
 
-    constructor.assert_called_once_with(token="test-token", provider="hf-inference")
+    constructor.assert_called_once_with(token="test-token", provider="auto", timeout=30.0)
     client.text_classification.assert_called_once_with(
         "The patient has severe chest pain.", model="test-org/medical-classifier"
     )
