@@ -8,10 +8,12 @@ import re
 import logging
 import tempfile
 import time
+import json
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Depends, status
+from fastapi.responses import StreamingResponse
 from fastapi.security import OAuth2PasswordBearer
 
 from main.service.rag_service import (
@@ -33,6 +35,7 @@ from main.handoff.handoff_service import (
     send_handoff_email,
     generate_handoff_reference_id,
     is_explicit_handoff_request,
+    classify_medical_intent,
     evaluate_confidence_score,
 )
 import secrets
@@ -339,9 +342,9 @@ async def query_rag(
         logger.warning("Blocked query input: %s", input_decision.reason)
         raise HTTPException(status_code=400, detail=input_decision.reason)
     request.question = input_decision.sanitized_text
-    # Scope-check before invoking any agent or retrieval tool. Queries outside
-    # the indexed MedLearn material must not be sent to the LLM.
-    if not QueryRouter.is_relevant_to_medlearn_documents(request.question):
+    # Classify intent before invoking any agent or retrieval tool.
+    intent = await classify_medical_intent(request.question)
+    if not intent["medical"]:
         # Do not reject a question simply because the current knowledge base
         # cannot cover it.  It cannot be answered reliably with the available
         # sources/tools, so create the same human-review handoff used for
@@ -353,7 +356,7 @@ async def query_rag(
             "timestamp_utc": datetime.datetime.now(datetime.UTC).isoformat(),
             "session_id": secrets.token_hex(8),
             "priority": "normal",
-            "trigger_reason": "query is not supported by the available knowledge base and tools",
+            "trigger_reason": intent["reason"],
             "query_history": [{"role": "user", "message": request.question}],
             "generated_answer": None,
             "evaluation_scores": {
@@ -764,6 +767,28 @@ async def query_rag(
             input_decision=input_decision,
             routing="handoff",
         )
+
+
+@router.post("/query/stream")
+async def query_rag_stream(
+    request: QueryRequest,
+    background_tasks: BackgroundTasks,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+):
+    """Stream the existing query response without changing query generation."""
+    response = await query_rag(request, background_tasks, current_user)
+    answer = response.answer
+
+    async def events():
+        for index in range(0, len(answer), 160):
+            yield f"event: chunk\ndata: {json.dumps({'content': answer[index:index + 160]})}\n\n"
+        yield f"event: done\ndata: {json.dumps(response.model_dump(mode='json'))}\n\n"
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.get("/")

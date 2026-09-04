@@ -47,6 +47,55 @@ def is_explicit_handoff_request(message: str) -> bool:
     return bool(EXPLICIT_HANDOFF_PATTERN.search(message))
 
 
+async def classify_medical_intent(message: str) -> Dict[str, Any]:
+    """Classify whether a query is medical before any agent invocation."""
+    intent_prompt = f"""Classify the user's query by intent before it is routed.
+
+Return exactly one label: MEDICAL or NON_MEDICAL.
+
+Use the query's meaning and medical indicators, including anatomy, physiology,
+symptoms, diseases, diagnosis, treatment, medication, laboratory values,
+clinical terminology, medical specialties such as dentistry, orthodontics,
+oral health, and surgery, medical education, named clinical rules, or
+questions about uploaded medical course material. A request to speak to a
+human is not itself medical evidence.
+Classify general conversation, coding, travel, finance, entertainment, and
+other unrelated requests as NON_MEDICAL.
+
+<user_query>
+{message}
+</user_query>
+
+Label:"""
+    try:
+        llm = Settings.llm
+        if llm is None:
+            raise ValueError("LLM is not configured in Settings.")
+        response = await llm.acomplete(intent_prompt)
+        label_match = re.search(r"\b(MEDICAL|NON_MEDICAL)\b", response.text.upper())
+        if label_match:
+            label = label_match.group(1)
+            return {
+                "medical": label == "MEDICAL",
+                "reason": f"LLM intent classification: {label}",
+            }
+        raise ValueError("LLM returned no valid intent label.")
+    except Exception as exc:
+        logger.warning("Medical intent classification unavailable: %s", exc)
+        fallback_medical = bool(re.search(
+            r"\b(?:anatomy|physiology|symptom|disease|diagnos\w*|treatment|drug|"
+            r"medication|clinical|medical|patient|doctor|dentistry|dental|"
+            r"orthodontic|oral|hospital|therapy|"
+            r"receptor|neuron|muscle|pain|blood|lab(?:oratory)?)\b",
+            message,
+            re.IGNORECASE,
+        ))
+        return {
+            "medical": fallback_medical,
+            "reason": "keyword fallback after unavailable intent classification",
+        }
+
+
 def evaluate_score(
     faithfulness: Optional[float],
     relevance: Optional[float],

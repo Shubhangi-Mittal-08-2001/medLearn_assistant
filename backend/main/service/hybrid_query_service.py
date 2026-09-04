@@ -35,6 +35,7 @@ from main.service.query_router import QueryRouter
 from main.service.rag_service import create_vector_store, get_llm, get_query_engine
 from main.tools.custom_tools import custom_inference_tool
 from main.evaluation.dataset_evaluation import evaluate_answer_relevance, evaluate_faithfulness_score
+from main.evaluation.dataset import get_langfuse_client
 from main.handoff.handoff_service import evaluate_confidence_score
 from llama_index.llms.openai import utils as openai_utils
 
@@ -569,6 +570,7 @@ Tool-call contract:
         self.events[:] = self.initialization_errors
         self.source_nodes.clear()
         self.external_evidence.clear()
+        await self._refresh_document_retrievers()
         if self._is_huggingface_classification_request(question) and self._has_huggingface_classification_tools():
             return await self._execute_huggingface_classification(question)
         if self.agent is not None:
@@ -590,6 +592,27 @@ Tool-call contract:
                 logger.warning("Agent execution failed; attempting deterministic fallback: %s", exc)
                 self.events.append(ToolExecution("agent", "error", str(exc)))
         return await self._fallback(question)
+
+    async def _refresh_document_retrievers(self) -> None:
+        """Refresh BM25/hybrid tools so uploads after startup are searchable."""
+        try:
+            fusion_service = await asyncio.to_thread(_fusion_service)
+            refreshed = {
+                "bm25_search": fusion_service._build_routed_retriever(["bm25"]),
+                "hybrid_document_search": fusion_service.fusion_retriever,
+            }
+            for tool in self.tools:
+                tool_name = self._tool_name(tool)
+                if tool_name not in refreshed:
+                    continue
+                query_engine = getattr(tool, "query_engine", None)
+                if isinstance(query_engine, TrackingQueryEngine):
+                    query_engine.query_engine = RetrieverQueryEngine.from_args(
+                        retriever=refreshed[tool_name]
+                    )
+            logger.info("query.document_retrievers.refreshed tools=%s", list(refreshed))
+        except Exception as exc:
+            logger.warning("query.document_retrievers.refresh_failed error=%s", exc)
 
     @staticmethod
     def _is_huggingface_classification_request(question: str) -> bool:
@@ -942,18 +965,33 @@ Tool-call contract:
         return sum(scores) / len(scores) if scores else None
 
     async def _evaluate_rag_evidence(self, question: str, answer: str) -> tuple[float, float, float]:
-        class _ScoreSink:
-            def create_score(self, **_: Any) -> None:
-                return None
-
         context = "\n\n".join(
             str(node.get("text", "")) for node in self.source_nodes if node.get("text")
         )
+        
+        # Get real Langfuse client for real-time score pushing
+        langfuse_client = get_langfuse_client()
         trace_id = "hybrid-query-evaluation"
+        
+        # If Langfuse is not available, use a no-op sink
+        if langfuse_client is None:
+            class _NoOpScoreSink:
+                def create_score(self, **_: Any) -> None:
+                    return None
+            langfuse_client = _NoOpScoreSink()
+        
         faithfulness, relevance = await asyncio.gather(
-            evaluate_faithfulness_score(_ScoreSink(), trace_id, question, context, answer),
-            evaluate_answer_relevance(_ScoreSink(), trace_id, question, answer),
+            evaluate_faithfulness_score(langfuse_client, trace_id, question, context, answer),
+            evaluate_answer_relevance(langfuse_client, trace_id, question, answer),
         )
+        
+        # Flush scores immediately to Langfuse for real-time pushing
+        if langfuse_client is not None and hasattr(langfuse_client, 'flush'):
+            try:
+                langfuse_client.flush()
+            except Exception as e:
+                logger.warning(f"Failed to flush Langfuse scores: {e}")
+        
         return faithfulness, relevance, (faithfulness + relevance) / 2
 
     async def _evaluate_mcp_evidence(self, question: str, answer: str) -> float:
