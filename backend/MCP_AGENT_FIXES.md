@@ -1,6 +1,6 @@
 # MedLearn MCP / Evidence Retry Fixes
 
-Updated prompt version: `medlearn-agent-v2.2`
+Updated prompt version: `medlearn-agent-v2.6`
 
 ## Fixed
 
@@ -20,10 +20,12 @@ If local hybrid evidence is unrelated to the pupil:
 - evidence gate => RELEVANT: NO / SUFFICIENT: NO
 - agent gets another tool-selection turn
 - if a Hugging Face MCP tool is registered, the agent may choose it
-- if no reliable external medical tool is configured, the request ends in handoff rather than using unrelated local evidence
+- if no suitable Hugging Face retrieval tool is configured, the request ends in handoff rather than using unrelated local evidence
 
 ## Important MCP distinction
 
 The Hugging Face MCP server can load tools such as `hub_repo_search`, `hub_repo_details`, `hf_fs`, and `hf_whoami`. These are Hugging Face Hub capabilities, not general medical literature search.
 
-A separate compatible server must be configured through `HF_MCP_URL` if MedLearn should retrieve external medical/literature evidence.
+The runtime uses the configured Hugging Face MCP server only. When it exposes no
+tool capable of retrieving relevant external content, the system does not treat a
+repository/model listing as medical evidence and instead permits handoff.

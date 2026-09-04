@@ -39,8 +39,20 @@ class HFInferenceInput(BaseModel):
         min_length=1,
         description="The input text that the selected model should classify or analyze.",
     )
+    candidate_labels: list[str] | None = Field(
+        default=None,
+        min_length=2,
+        description=(
+            "Optional labels for zero-shot classification. When supplied, the "
+            "tool uses the model's zero-shot classification endpoint."
+        ),
+    )
 
-def hf_inference_api(model_id: str, text: str) -> str:
+def hf_inference_api(
+    model_id: str,
+    text: str,
+    candidate_labels: list[str] | None = None,
+) -> str:
     """
     Runs inference on a specific Hugging Face model using the Inference API.
     This tool is a simple wrapper around the HuggingFace Inference API.
@@ -69,7 +81,7 @@ def hf_inference_api(model_id: str, text: str) -> str:
         # Try using HuggingFace Hub library if available
         if HF_HUB_AVAILABLE:
             logger.debug("[HF_INFERENCE] Using HuggingFace Hub client for inference")
-            return _call_with_hub_client(model_id, text)
+            return _call_with_hub_client(model_id, text, candidate_labels)
         else:
             # Fallback to requests library
             logger.debug("[HF_INFERENCE] Using requests library fallback for inference")
@@ -78,7 +90,9 @@ def hf_inference_api(model_id: str, text: str) -> str:
         logger.error(f"[HF_INFERENCE] Unexpected error during inference: {str(e)}", exc_info=True)
         raise
 
-def _call_with_hub_client(model_id: str, text: str) -> str:
+def _call_with_hub_client(
+    model_id: str, text: str, candidate_labels: list[str] | None = None
+) -> str:
     """
     Call inference using the HuggingFace Hub client library.
     
@@ -102,14 +116,32 @@ def _call_with_hub_client(model_id: str, text: str) -> str:
     # error when that repository is not hosted).
     provider = os.getenv("HF_INFERENCE_PROVIDER", "auto")
     timeout = float(os.getenv("HF_INFERENCE_TIMEOUT", "30"))
-    client = InferenceClient(token=hf_token, provider=provider, timeout=timeout)
-    logger.debug(f"[HF_HUB_CLIENT] InferenceClient initialized successfully")
-    
+    def classify(selected_provider: str):
+        client = InferenceClient(token=hf_token, provider=selected_provider, timeout=timeout)
+        if candidate_labels:
+            logger.info(
+                "[HF_HUB_CLIENT] Calling zero_shot_classification for model=%s provider=%s",
+                model_id, selected_provider,
+            )
+            return client.zero_shot_classification(
+                text, candidate_labels=candidate_labels, model=model_id
+            )
+        logger.info(
+            "[HF_HUB_CLIENT] Calling text_classification for model=%s provider=%s",
+            model_id, selected_provider,
+        )
+        return client.text_classification(text, model=model_id)
+
     try:
-        logger.info(f"[HF_HUB_CLIENT] Calling text_classification for model: {model_id}")
-        # Try text classification first
-        result = client.text_classification(text, model=model_id)
-        
+        try:
+            result = classify(provider)
+        except StopIteration:
+            # `auto` raises StopIteration when no third-party provider mapping
+            # is published for the model. Retry Hugging Face's own provider once.
+            if provider != "auto":
+                raise
+            logger.info("[HF_HUB_CLIENT] Auto provider unavailable; retrying hf-inference")
+            result = classify("hf-inference")
         logger.info(f"[HF_HUB_CLIENT] Classification succeeded for model {model_id}, got {len(result)} results")
         logger.debug(f"[HF_HUB_CLIENT] Classification results: {result}")
         

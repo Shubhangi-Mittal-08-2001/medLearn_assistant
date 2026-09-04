@@ -24,7 +24,13 @@ from sqlalchemy.engine import URL
 
 from main.service.agent_factory import create_llm
 from main.service.fusion_retrieval import FusionRetrievalService
-from main.service.mcp_client import HuggingFaceMCPService, MedicalMCPService, iter_leaf_exceptions, root_exception_message
+from main.service.mcp_client import (
+    HuggingFaceMCPService,
+    MedicalMCPService,
+    iter_leaf_exceptions,
+    root_exception_message,
+)
+from main.service.prompt_manager import get_agent_system_prompt
 from main.service.query_router import QueryRouter
 from main.service.rag_service import create_vector_store, get_llm, get_query_engine
 from main.tools.custom_tools import custom_inference_tool
@@ -45,6 +51,12 @@ SQL_PATTERNS = re.compile(
 )
 RAG_TOOLS = {"semantic_search", "bm25_search", "hybrid_document_search"}
 SQL_TOOLS = {"clinical_sql"}
+HF_ZERO_SHOT_MODEL = os.getenv("HF_ZERO_SHOT_MODEL", "facebook/bart-large-mnli")
+HF_ZERO_SHOT_LABELS = [
+    "somatosensory education",
+    "clinical symptom report",
+    "unrelated",
+]
 KNOWN_MCP_TOOLS = {"hf_inference", "hub_repo_search", "hub_repo_details"}
 
 _GPT5_CONTEXT_WINDOWS = {
@@ -239,6 +251,18 @@ class TrackingTool:
             if len(aliases) == 1:
                 kwargs["input"] = kwargs.pop(aliases[0])
             kwargs.pop("top_k", None)
+        # The Hugging Face MCP tools use different schemas from local
+        # QueryEngineTool instances.  Function-calling models sometimes still
+        # emit the generic `input` field, so normalize only unambiguous aliases.
+        if self.name == "hub_repo_search" and "query" not in kwargs:
+            for alias in ("input", "question"):
+                if alias in kwargs:
+                    kwargs["query"] = kwargs.pop(alias)
+                    break
+        if self.name == "hub_repo_details" and "repo_ids" not in kwargs:
+            candidate = kwargs.pop("query", kwargs.pop("input", None))
+            if isinstance(candidate, str) and re.fullmatch(r"[\w.-]+/[\w.-]+", candidate):
+                kwargs["repo_ids"] = [candidate]
         schema_model = getattr(self.metadata, "fn_schema", None)
         if schema_model is None:
             return kwargs
@@ -414,37 +438,19 @@ def _fusion_service() -> FusionRetrievalService:
 class HybridQueryService:
     """Builds an OpenAI-compatible agent and executes hybrid medical queries."""
 
-    SYSTEM_PROMPT = """You are MedLearn, a medical education assistant with several
-independent information sources. Identify the user's information requirements, then
-select exactly the tool or tools that satisfy them before answering. Uploaded or
-indexed textbook content uses semantic_search, bm25_search, or
-hybrid_document_search. Structured clinical records use clinical_sql. Pass the user's
-natural-language question to any of these four tools using the single argument `input`;
-do not pass `query`, `question`, or `top_k`. Hugging Face MCP tools and hf_inference are for Hugging Face repository/model
-operations; they are not medical evidence sources. Tools from the configured medical
-MCP server are external medical evidence sources and may be used for current external
-evidence or when local textbook/database evidence is insufficient.
+    SYSTEM_PROMPT = get_agent_system_prompt() + """
 
-For a multi-source request, call every required source and synthesize all successful
-results. Issue independent calls together so the runtime can execute them in
-parallel; use sequential calls only when a later call needs an earlier result (for
-example model search followed by inference). Do not call every tool by default. If
-one call fails, continue with other independent selected tools, disclose the missing
-source, and never invent its result. When asked to find and run a Hugging Face model,
-first call hub_repo_search using its discovered schema; only after it returns a valid
-repository ID call hf_inference with that exact ID and the user's text. Never call
-hf_inference after a failed/empty search. For hf_inference, the only argument names are
-model_id (the exact repository identifier) and text (the user's input); never use model,
-repo_id, engine, or inputs. hub_repo_details is optional and should be called only when
-its metadata is necessary to choose a search result or confirm inference availability;
-its repo_ids argument must be a non-empty list of repository IDs. Prefer candidates with
-a live Hugging Face inference provider. For hub_repo_search, use only its discovered
-schema: repo_types=["model"], filters=["text-classification", "language:en"] and
-sort="downloads" are valid; pipeline_tag and language are not fields. When the user
-requests a biomedical or clinical model, include an explicit biomedical/clinical query
-instead of browsing all text-classification models. Reject unrelated-language, GGUF,
-generation, or non-medical results rather than running them. Never claim a source is unavailable unless its
-tool returned an error. State when evidence is insufficient and never expose PII."""
+Tool-call contract:
+- For clinical_sql, semantic_search, bm25_search, and
+  hybrid_document_search, pass the natural-language question as `input` only.
+- For a request to find and run a Hugging Face model, call hub_repo_search
+  once first, using `query`, `repo_types=["model"]`,
+  `filters=["text-classification"]`, `sort="downloads"`, and `limit`.
+  Do not use generic `input` for Hub tools. Call hub_repo_details only with a
+  selected repository ID as `repo_ids=["org/model"]`. Call hf_inference only
+  with the returned exact `model_id` and the user's `text`. Do not run
+  arbitrary, fill-mask, or unrelated models.
+"""
 
     DATA_TOOLS = {"clinical_sql", "semantic_search", "bm25_search", "hybrid_document_search"}
 
@@ -514,14 +520,12 @@ tool returned an error. State when evidence is insufficient and never expose PII
             except Exception as exc:
                 self.events.append(ToolExecution("huggingface_mcp", "unavailable", str(exc)))
                 logger.warning("Hugging Face MCP unavailable; continuing with local tools: %s", exc)
-        medical_mcp = MedicalMCPService.from_environment()
-        if medical_mcp is not None:
-            try:
-                for tool in await medical_mcp.load_tools():
-                    self._register_tool(tool, "medical_mcp")
-            except Exception as exc:
-                self.events.append(ToolExecution("medical_mcp", "unavailable", str(exc)))
-                logger.warning("Medical MCP unavailable; continuing with other tools: %s", exc)
+        try:
+            for tool in await MedicalMCPService().load_tools():
+                self._register_tool(tool, "medical_mcp")
+        except Exception as exc:
+            self.events.append(ToolExecution("medical_mcp", "unavailable", str(exc)))
+            logger.warning("Medical MCP unavailable; continuing with configured tools: %s", exc)
         self.initialization_errors = list(self.events)
         logger.info(
             "agent.tools.available tools=%s unavailable=%s",
@@ -565,6 +569,8 @@ tool returned an error. State when evidence is insufficient and never expose PII
         self.events[:] = self.initialization_errors
         self.source_nodes.clear()
         self.external_evidence.clear()
+        if self._is_huggingface_classification_request(question) and self._has_huggingface_classification_tools():
+            return await self._execute_huggingface_classification(question)
         if self.agent is not None:
             try:
                 # Workflow.run() takes StartEvent kwargs. A positional string is
@@ -572,7 +578,7 @@ tool returned an error. State when evidence is insufficient and never expose PII
                 response = await self.agent.run(user_msg=question)
                 answer = await self._complete_requested_hf_inference(question, str(response))
                 result = await self._build_result(question, answer, "agent")
-                result = await self._redirect_low_faithfulness_to_medical_mcp(question, result)
+                result = await self._redirect_weak_rag_to_huggingface_mcp(question, result)
                 if not result.tools_used and not result.tool_errors:
                     logger.warning("Agent returned without invoking a tool; running intent-routed fallback")
                     return await self._fallback(question)
@@ -585,63 +591,114 @@ tool returned an error. State when evidence is insufficient and never expose PII
                 self.events.append(ToolExecution("agent", "error", str(exc)))
         return await self._fallback(question)
 
-    async def _redirect_low_faithfulness_to_medical_mcp(
-        self, question: str, result: HybridQueryResult
-    ) -> HybridQueryResult:
-        """Retry a weak hybrid-document answer using only medical MCP tools."""
-        threshold = float(os.getenv("RAG_FAITHFULNESS_THRESHOLD", "0.70"))
-        threshold = min(max(threshold, 0.0), 1.0)
-        faithfulness = result.evaluation.get("faithfulness")
-        if (
-            "hybrid_document_search" not in result.tools_used
-            or not isinstance(faithfulness, (int, float))
-            or faithfulness >= threshold
-            or any(self.tool_origins.get(name) == "medical_mcp" for name in result.tools_used)
-        ):
-            return result
+    @staticmethod
+    def _is_huggingface_classification_request(question: str) -> bool:
+        """Recognize the explicit search-then-inference workflow."""
+        return bool(
+            re.search(r"\bhugging\s*face\b", question, re.I)
+            and re.search(r"\b(?:classify|classification|run|infer(?:ence)?)\b", question, re.I)
+        )
 
+    def _has_huggingface_classification_tools(self) -> bool:
+        available = {self._tool_name(tool) for tool in self.tools}
+        return {"hub_repo_search", "hf_inference"}.issubset(available)
+
+    async def _execute_huggingface_classification(self, question: str) -> HybridQueryResult:
+        """Run the bounded Hub-search -> inference sequence without agent retries."""
+        await self._search_for_medical_classifiers()
+        answer = await self._complete_requested_hf_inference(
+            question,
+            "No Hugging Face classification result has been produced yet.",
+        )
+        if any(event.name == "hf_inference" and event.status == "error" for event in self.events):
+            answer = await self._classify_with_medical_mcp(question, answer)
+        return await self._build_result(question, answer, "huggingface:classification")
+
+    async def _classify_with_medical_mcp(self, question: str, previous_answer: str) -> str:
+        """Use medical literature MCP when HF cannot execute the requested task."""
         medical_tools = [
             tool for tool in self.tools
             if self.tool_origins.get(self._tool_name(tool)) == "medical_mcp"
         ]
         if not medical_tools:
+            return previous_answer
+        try:
+            agent = self._create_openai_agent(medical_tools)
+            response = await agent.run(user_msg=(
+                "Use the available medical literature tools to assess this clinical text. "
+                "Return a concise evidence-grounded classification, explain the clinical "
+                "meaning of the terms, and cite the retrieved medical source identifiers. "
+                "Do not claim that a machine-learning model classified it. Question: "
+                f"{question}"
+            ))
+            return str(response)
+        except Exception as exc:
+            logger.warning("Medical MCP classification fallback failed: %s", exc)
+            return previous_answer
+
+    async def _redirect_weak_rag_to_huggingface_mcp(
+        self, question: str, result: HybridQueryResult
+    ) -> HybridQueryResult:
+        """Re-plan weak local-document answers using configured HF MCP tools."""
+        threshold = float(os.getenv("RAG_FAITHFULNESS_THRESHOLD", "0.70"))
+        threshold = min(max(threshold, 0.0), 1.0)
+        relevance_threshold = float(os.getenv("RAG_RELEVANCE_THRESHOLD", "0.70"))
+        relevance_threshold = min(max(relevance_threshold, 0.0), 1.0)
+        faithfulness = result.evaluation.get("faithfulness")
+        relevance = result.evaluation.get("relevance")
+        local_evidence_is_weak = (
+            isinstance(faithfulness, (int, float)) and faithfulness < threshold
+        ) or (
+            isinstance(relevance, (int, float)) and relevance < relevance_threshold
+        )
+        if (
+            not any(tool_name in RAG_TOOLS for tool_name in result.tools_used)
+            or not local_evidence_is_weak
+            or any(self.tool_origins.get(name) == "huggingface_mcp" for name in result.tools_used)
+        ):
+            return result
+
+        huggingface_tools = [
+            tool for tool in self.tools
+            if self.tool_origins.get(self._tool_name(tool)) == "huggingface_mcp"
+        ]
+        if not huggingface_tools:
             logger.info(
-                "Low RAG faithfulness %.3f < %.3f, but no medical MCP tools are configured",
-                faithfulness,
-                threshold,
+                "Weak RAG evidence faithfulness=%s relevance=%s, but Hugging Face MCP is unavailable",
+                faithfulness, relevance,
             )
             return result
 
-        names = [self._tool_name(tool) for tool in medical_tools]
+        names = [self._tool_name(tool) for tool in huggingface_tools]
         logger.info(
-            "Low RAG faithfulness %.3f < %.3f; redirecting to medical MCP tools=%s",
-            faithfulness,
-            threshold,
-            names,
+            "Weak RAG evidence faithfulness=%s relevance=%s; re-planning with Hugging Face MCP tools=%s",
+            faithfulness, relevance, names,
         )
         successful_before = {
             event.name for event in self.events if event.status == "success"
         }
         try:
-            medical_agent = self._create_openai_agent(medical_tools)
-            response = await medical_agent.run(user_msg=(
-                "The local hybrid document answer did not meet the faithfulness threshold. "
+            huggingface_agent = self._create_openai_agent(huggingface_tools)
+            response = await huggingface_agent.run(user_msg=(
+                "The local document evidence was insufficient. "
                 f"Answer this medical-education question using the most suitable available "
-                f"external medical MCP tool ({', '.join(names)}). You must call a tool before "
-                f"answering, cite source identifiers or links returned by it, and state when "
-                f"the external evidence is insufficient. Question: {question}"
+                f"Hugging Face MCP tool ({', '.join(names)}). Use only a tool whose description "
+                "can retrieve relevant external content (for example papers, documentation, or "
+                "datasets). A model/repository listing is not medical evidence. You must call a "
+                "tool before answering, cite source identifiers or links returned by it, and state "
+                f"when the available Hugging Face evidence is insufficient. Question: {question}"
             ))
         except Exception as exc:
-            logger.warning("Medical MCP low-faithfulness retry failed: %s", exc)
-            self.events.append(ToolExecution("medical_mcp_retry", "error", str(exc)))
+            logger.warning("Hugging Face MCP evidence retry failed: %s", exc)
+            self.events.append(ToolExecution("huggingface_mcp_retry", "error", str(exc)))
             return await self._build_result(question, result.answer, "agent")
 
         successful_after = {
             event.name for event in self.events
-            if event.status == "success" and self.tool_origins.get(event.name) == "medical_mcp"
+            if event.status == "success" and self.tool_origins.get(event.name) == "huggingface_mcp"
         }
         if not successful_after - successful_before:
-            logger.warning("Medical MCP retry returned without successfully calling a medical tool")
+            logger.warning("Hugging Face MCP retry returned without successfully calling a tool")
             return await self._build_result(question, result.answer, "agent")
         return await self._build_result(question, str(response), "agent:mcp_fallback")
 
@@ -686,6 +743,26 @@ tool returned an error. State when evidence is insufficient and never expose PII
                         inference_text,
                         f"Hugging Face found `{model_id}`, but its inference endpoint rejected the configured token.",
                     )
+        # Biomedical repositories are frequently not hosted by the configured
+        # provider. Use a provider-hosted zero-shot model for the educational
+        # routing task rather than returning a rule-based result as model output.
+        try:
+            output = await inference_tool.acall(
+                model_id=HF_ZERO_SHOT_MODEL,
+                text=inference_text,
+                candidate_labels=HF_ZERO_SHOT_LABELS,
+            )
+            logger.info(
+                "Completed HF zero-shot classification fallback with model=%s",
+                HF_ZERO_SHOT_MODEL,
+            )
+            return (
+                f"Model: {HF_ZERO_SHOT_MODEL}\n\n"
+                "Zero-shot classification result:\n"
+                f"{output}"
+            )
+        except Exception as exc:
+            logger.warning("HF zero-shot classification fallback failed: %s", exc)
         return self._medical_classification_fallback(inference_text, last_failure)
 
     def _model_ids_from_search_evidence(self) -> list[str]:
@@ -716,11 +793,18 @@ tool returned an error. State when evidence is insufficient and never expose PII
             "biobert", "medbert", "pubmed", "pathology", "radiology", "pharma",
         )
         unsuitable_terms = ("gguf", "pashto", "urdu", "arabic", "translation", "generation")
-        return [
+        suitable = [
             model_id for model_id in candidates
             if any(term in model_id.lower() for term in medical_terms)
             and not any(term in model_id.lower() for term in unsuitable_terms)
         ]
+        # A repository name is not proof of its pipeline task, but this avoids
+        # trying well-known base checkpoints before actual classifier heads.
+        classifier_first = [
+            model_id for model_id in suitable
+            if "classif" in model_id.lower() or "classifier" in model_id.lower()
+        ]
+        return classifier_first + [model_id for model_id in suitable if model_id not in classifier_first]
 
     async def _search_for_medical_classifiers(self) -> None:
         search_tool = next(

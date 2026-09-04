@@ -24,6 +24,28 @@ def test_hf_inference_uses_auto_provider(monkeypatch):
     assert result == [{"label": "LABEL_1", "score": 0.9}]
 
 
+def test_hf_inference_uses_zero_shot_when_labels_are_supplied(monkeypatch):
+    monkeypatch.setenv("HF_TOKEN", "test-token")
+    client = MagicMock()
+    client.zero_shot_classification.return_value = [
+        SimpleNamespace(label="clinical symptom report", score=0.9)
+    ]
+
+    with patch("main.tools.custom_tools.InferenceClient", return_value=client):
+        result = json.loads(_call_with_hub_client(
+            "facebook/bart-large-mnli",
+            "The patient reports pain receptors.",
+            ["somatosensory education", "clinical symptom report"],
+        ))
+
+    client.zero_shot_classification.assert_called_once_with(
+        "The patient reports pain receptors.",
+        candidate_labels=["somatosensory education", "clinical symptom report"],
+        model="facebook/bart-large-mnli",
+    )
+    assert result == [{"label": "clinical symptom report", "score": 0.9}]
+
+
 @pytest.mark.parametrize("model_id,text,error", [
     ("", "chest pain", "model_id is required"),
     ("test-org/model", "  ", "text is required"),

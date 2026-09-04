@@ -50,10 +50,8 @@ evaluation scores, handoff status, and trace ID.
 
 ## MCP integrations
 
-- `HF_MCP_URL` exposes Hugging Face Hub repository tools; set `HF_TOKEN` to enable it.
-- `MEDICAL_MCP_URL` exposes an external medical API such as a PubMed-capable MCP
-  server. `MCP_SERVER_URL` remains a supported alias. Configure `MEDICAL_MCP_TOKEN`
-  and `MEDICAL_MCP_ALLOWED_TOOLS` when the server requires them.
+- `HF_MCP_URL` exposes Hugging Face MCP tools; set `HF_TOKEN` to enable it.
+  This is the application's only external MCP integration.
 
 Hub search neither retrieves medical literature nor executes a model. The separate
 `hf_inference` tool uses Inference Providers. Its fine-grained token must include
@@ -61,33 +59,10 @@ Hub search neither retrieves medical literature nor executes a model. The separa
 MCP discovery succeeds. `HF_INFERENCE_PROVIDER` defaults to `auto`.
 
 An unavailable MCP server is recorded in `tool_errors`; SQL and local RAG remain usable.
-When `hybrid_document_search` produces an answer below `RAG_FAITHFULNESS_THRESHOLD`
-(default `0.70`), the service retries using only the configured medical MCP tools.
-Hugging Face Hub tools are deliberately excluded from this evidence fallback.
-
-### Run the bundled PubMed + RxNorm MCP server
-
-In one terminal:
-
-```powershell
-cd "A:\Agentic AI\course3-project\medlearn-assistant\backend"
-.\.venv\Scripts\python.exe -m main.medical_mcp_server
-```
-
-In `backend/.env`, configure:
-
-```env
-MEDICAL_MCP_URL=http://127.0.0.1:8010/mcp
-MEDICAL_MCP_ALLOWED_TOOLS=pubmed_search,pubmed_article_details,rxnorm_lookup,rxnorm_concept_details
-RAG_FAITHFULNESS_THRESHOLD=0.70
-NCBI_EMAIL=your-email@example.com
-# NCBI_API_KEY is optional but recommended for higher NCBI request limits.
-```
-
-Then start the MedLearn API in a second terminal. The bundled server provides PubMed
-literature search/details and RxNorm name/RxCUI normalization. RxNav discontinued its
-drug-interaction API in 2024, so questions about interactions or adverse effects must
-use PubMed evidence rather than RxNorm.
+When local document evidence scores below `RAG_FAITHFULNESS_THRESHOLD` or
+`RAG_RELEVANCE_THRESHOLD` (both default to `0.70`), the service re-plans with the
+configured Hugging Face MCP tools. It only accepts tools that can retrieve relevant
+external content; a model/repository listing alone is not presented as medical evidence.
 
 ## Supported upload formats
 

@@ -18,6 +18,14 @@ FAITHFULNESS_THRESHOLD = 0.6
 RELEVANCE_THRESHOLD = 0.5
 CONFIDENCE_THRESHOLD = 40
 
+# A direct request is an intent, not a medical-evidence judgement.  Keeping it
+# deterministic avoids a separate LLM round trip on every normal query.
+EXPLICIT_HANDOFF_PATTERN = re.compile(
+    r"\b(?:speak|talk|connect|transfer|escalat\w*|refer)\b.{0,40}\b(?:human|agent|person|doctor|support|representative)\b|"
+    r"\b(?:human|agent|person|doctor|support|representative)\b.{0,40}\b(?:please|help|now)\b",
+    re.IGNORECASE,
+)
+
 SMTP_HOST = os.getenv("SMTP_HOST")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 SMTP_USERNAME = os.getenv("SMTP_USERNAME")
@@ -34,6 +42,11 @@ def generate_handoff_reference_id(now: Optional[datetime.datetime] = None) -> st
     return f"HO-{now.strftime('%Y%m%d-%H%M%S')}-{secrets.token_hex(3).upper()}"
 
 
+def is_explicit_handoff_request(message: str) -> bool:
+    """Return whether the user directly asks to be transferred to a person."""
+    return bool(EXPLICIT_HANDOFF_PATTERN.search(message))
+
+
 def evaluate_score(
     faithfulness: Optional[float],
     relevance: Optional[float],
@@ -46,8 +59,8 @@ def evaluate_score(
     # 2. faithfulness or relevance is None → "evaluation scores unavailable"
     # 3. faithfulness < 0.6 → "faithfulness below threshold"
     # 4. relevance < 0.5 → "answer relevance below threshold"
-    # 5. Keywords in question (human/agent/support/escalate) → "explicit user request"
-    # 6. Otherwise → {"trigger": False}
+    # 5. Otherwise → {"trigger": False}; direct handoff intent is handled by
+    # is_explicit_handoff_request() at the routing boundary.
     if no_chunks:
         return {"trigger": True, "reason": "retrieval returned no context"}
     if faithfulness is None or relevance is None:
@@ -56,8 +69,6 @@ def evaluate_score(
         return {"trigger": True, "reason": "faithfulness below threshold"}
     if relevance < RELEVANCE_THRESHOLD:
         return {"trigger": True, "reason": "answer relevance below threshold"}
-    if any(keyword in user_question.lower() for keyword in ["human", "agent", "support", "escalate"]):
-        return {"trigger": True, "reason": "explicit user request"}
     return {"trigger": False, "reason": "no escalation needed"}
 
 
@@ -144,32 +155,6 @@ Return only one integer from 0 to 100.
         "confidence": confidence_score
     }
 
-
-
-async def evaluate_explicit_user_request(message: str) -> Dict[str, Any]:
-    """LLM-based classifier for explicit user request or frustration."""
-    # Use LLM to classify if user is asking for human help
-    # 1. Get Settings.llm (raise ValueError if None)
-    # 2. Prompt: Ask LLM to return "YES" or "NO" if user wants human help
-    # 3. Check if "YES" in response.text.upper()
-    # 4. Return {"trigger": bool, "reason": str}
-    try:
-        llm = Settings.llm
-        if llm is None:
-            raise ValueError("LLM is not configured in Settings.")
-
-        user_request_prompt = f"Does the user want to speak with a human agent? Answer with 'YES' or 'NO'.\nMessage: {message}"
-        user_request_response = await llm.acomplete(user_request_prompt)
-
-        if re.search(r"\bYES\b", user_request_response.text, re.IGNORECASE):
-            return {"trigger": True, "reason": "explicit user request for human help"}
-        return {"trigger": False, "reason": "no explicit user request for human help"}
-    except Exception as exc:
-        logger.warning("Explicit user request evaluation unavailable: %s", exc)
-        return {
-            "trigger": False,
-            "reason": "explicit user request evaluation unavailable",
-        }
 
 
 def send_handoff_email(context: Dict[str, Any]):

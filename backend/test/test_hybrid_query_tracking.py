@@ -256,7 +256,7 @@ class AgentRoutingTrackingTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(inference.acall.await_count, 2)
-        self.assertIn("biomed-org/hosted-classifier", answer)
+        self.assertIn("medical-org/unsupported-clinical-model", answer)
         self.assertIn("Classification result", answer)
 
     async def test_hf_search_then_inference_success(self):
@@ -352,36 +352,36 @@ class AgentRoutingTrackingTests(unittest.IsolatedAsyncioTestCase):
 
 
 class SourceAwareEvaluationTests(unittest.IsolatedAsyncioTestCase):
-    async def test_low_hybrid_faithfulness_redirects_to_medical_mcp(self):
+    async def test_low_hybrid_faithfulness_redirects_to_hugging_face_mcp(self):
         service = HybridQueryService()
-        medical_tool = MagicMock()
-        medical_tool.metadata.name = "pubmed_search"
-        service.tools = [medical_tool]
-        service.tool_origins = {"pubmed_search": "medical_mcp"}
-        service.tool_sources = {"pubmed_search": "mcp"}
+        hf_tool = MagicMock()
+        hf_tool.metadata.name = "paper_search"
+        service.tools = [hf_tool]
+        service.tool_origins = {"paper_search": "huggingface_mcp"}
+        service.tool_sources = {"paper_search": "mcp"}
         service.events[:] = [ToolExecution("hybrid_document_search", "success")]
         initial = HybridQueryResult(
             "question", "weak local answer", [], ["hybrid_document_search"], [],
             "agent:hybrid_document_search", {"faithfulness": 0.4},
         )
 
-        async def run_medical_agent(**kwargs):
-            service.events.append(ToolExecution("pubmed_search", "success"))
-            service.external_evidence.append({"tool": "pubmed_search", "content": "PMID:123"})
+        async def run_huggingface_agent(**kwargs):
+            service.events.append(ToolExecution("paper_search", "success"))
+            service.external_evidence.append({"tool": "paper_search", "content": "source:123"})
             return "Externally supported answer (PMID:123)"
 
         agent = MagicMock()
-        agent.run = AsyncMock(side_effect=run_medical_agent)
+        agent.run = AsyncMock(side_effect=run_huggingface_agent)
         service._create_openai_agent = MagicMock(return_value=agent)
         service._evaluate_result = AsyncMock(return_value={"faithfulness": 0.8, "mode": "rag+mcp"})
 
-        result = await service._redirect_low_faithfulness_to_medical_mcp("question", initial)
+        result = await service._redirect_weak_rag_to_huggingface_mcp("question", initial)
 
-        service._create_openai_agent.assert_called_once_with([medical_tool])
+        service._create_openai_agent.assert_called_once_with([hf_tool])
         self.assertIn("Externally supported", result.answer)
-        self.assertEqual(result.tools_used, ["hybrid_document_search", "pubmed_search"])
+        self.assertEqual(result.tools_used, ["hybrid_document_search", "paper_search"])
 
-    async def test_low_faithfulness_does_not_use_hugging_face_as_medical_evidence(self):
+    async def test_low_faithfulness_uses_hugging_face_mcp(self):
         service = HybridQueryService()
         hf_tool = MagicMock()
         hf_tool.metadata.name = "hub_repo_search"
@@ -391,12 +391,19 @@ class SourceAwareEvaluationTests(unittest.IsolatedAsyncioTestCase):
             "question", "weak local answer", [], ["hybrid_document_search"], [],
             "agent:hybrid_document_search", {"faithfulness": 0.2},
         )
-        service._create_openai_agent = MagicMock()
+        async def run_huggingface_agent(**kwargs):
+            service.events.append(ToolExecution("hub_repo_search", "success"))
+            return "Insufficient Hugging Face evidence"
 
-        result = await service._redirect_low_faithfulness_to_medical_mcp("question", initial)
+        agent = MagicMock()
+        agent.run = AsyncMock(side_effect=run_huggingface_agent)
+        service._create_openai_agent = MagicMock(return_value=agent)
+        service._evaluate_result = AsyncMock(return_value={"faithfulness": 0.2, "mode": "rag+mcp"})
 
-        self.assertIs(result, initial)
-        service._create_openai_agent.assert_not_called()
+        result = await service._redirect_weak_rag_to_huggingface_mcp("question", initial)
+
+        self.assertEqual(result.tools_used, ["hub_repo_search"])
+        service._create_openai_agent.assert_called_once_with([hf_tool])
 
     async def test_each_document_tool_uses_only_rag_evaluation(self):
         for tool_name in ("semantic_search", "bm25_search", "hybrid_document_search"):

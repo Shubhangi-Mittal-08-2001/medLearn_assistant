@@ -32,7 +32,7 @@ from main.handoff.handoff_service import (
     evaluate_score,
     send_handoff_email,
     generate_handoff_reference_id,
-    evaluate_explicit_user_request,
+    is_explicit_handoff_request,
     evaluate_confidence_score,
 )
 import secrets
@@ -139,7 +139,6 @@ def _guarded_response(question: str, answer: str, source_nodes: list[dict], inpu
     """Apply output guardrails and consistently expose their decision to clients."""
     output = _guardrails_validator.validate_and_sanitize_output(answer)
     sanitized_source_nodes = []
-    retrieved_nodes = []
     source_phi_summaries = []
     for node in source_nodes:
         sanitized_node = dict(node)
@@ -150,11 +149,6 @@ def _guarded_response(question: str, answer: str, source_nodes: list[dict], inpu
         if "content" in sanitized_node:
             sanitized_node["content"] = node_output.sanitized_text
         sanitized_source_nodes.append(sanitized_node)
-        retrieved_nodes.append(NodeResponse(
-            text=node_output.sanitized_text,
-            score=node.get("score"),
-            source=node.get("source"),
-        ))
         source_phi_summaries.extend(node_output.pii_summaries)
 
     pii_summaries = list(dict.fromkeys(
@@ -163,7 +157,6 @@ def _guarded_response(question: str, answer: str, source_nodes: list[dict], inpu
     return QueryResponse(
         query=question,
         answer=output.sanitized_text,
-        retrieved_nodes=retrieved_nodes,
         source_nodes=sanitized_source_nodes,
         validation_results=ValidationResults(
             input_allowed=True,
@@ -346,10 +339,9 @@ async def query_rag(
         logger.warning("Blocked query input: %s", input_decision.reason)
         raise HTTPException(status_code=400, detail=input_decision.reason)
     request.question = input_decision.sanitized_text
-    # Scope checking must not pre-empt the agent: Hugging Face and SQL intents can
-    # be valid even when they do not mention a term from the uploaded textbook.
-    # Retain the legacy scope gate only when the agentic runtime is unavailable.
-    if (_agent_service is None or not hasattr(_agent_service, "execute_query")) and not QueryRouter.is_relevant_to_medlearn_documents(request.question):
+    # Scope-check before invoking any agent or retrieval tool. Queries outside
+    # the indexed MedLearn material must not be sent to the LLM.
+    if not QueryRouter.is_relevant_to_medlearn_documents(request.question):
         # Do not reject a question simply because the current knowledge base
         # cannot cover it.  It cannot be answered reliably with the available
         # sources/tools, so create the same human-review handoff used for
@@ -446,11 +438,10 @@ async def query_rag(
                     "reason": "source-aware confidence below threshold",
                     "confidence": confidence_percent,
                 }
-                try:
-                    explicit_handoff = await evaluate_explicit_user_request(request.question)
-                except Exception as exc:
-                    logger.warning("Explicit handoff evaluation unavailable: %s", exc)
-                    explicit_handoff = {"trigger": False, "reason": "evaluation unavailable"}
+                explicit_handoff = {
+                    "trigger": is_explicit_handoff_request(request.question),
+                    "reason": "explicit user request for human help",
+                }
 
                 full_chunks = list(result.source_nodes)
                 rag_used = evaluation.get("mode") in {"rag", "rag+mcp"}
@@ -627,11 +618,10 @@ async def query_rag(
         # ----------------------------------------------------
         # 4. LLM Intent Detection 
         # ----------------------------------------------------
-        try:
-            explicit_handoff = await evaluate_explicit_user_request(request.question)
-        except Exception as exc:
-            logger.warning("Explicit user request evaluation unavailable: %s", exc)
-            explicit_handoff = {"trigger": False, "reason": "evaluation unavailable"}
+        explicit_handoff = {
+            "trigger": is_explicit_handoff_request(request.question),
+            "reason": "explicit user request for human help",
+        }
 
         # ----------------------------------------------------
         # 5. FINAL HANDOFF DECISION 

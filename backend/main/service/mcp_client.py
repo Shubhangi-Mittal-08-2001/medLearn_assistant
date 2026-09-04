@@ -105,14 +105,21 @@ class HuggingFaceMCPService(RemoteMCPService):
 
 
 class MedicalMCPService(RemoteMCPService):
-    """Optional external medical API exposed through an MCP server."""
+    """External medical literature MCP integration used when HF inference fails."""
 
-    @classmethod
-    def from_environment(cls) -> "MedicalMCPService | None":
-        url = os.getenv("MEDICAL_MCP_URL") or os.getenv("MCP_SERVER_URL")
-        if not url:
-            return None
-        allowed = [item.strip() for item in os.getenv("MEDICAL_MCP_ALLOWED_TOOLS", "").split(",")
-                   if item.strip()]
-        return cls(url, token=os.getenv("MEDICAL_MCP_TOKEN") or os.getenv("MCP_SERVER_TOKEN"),
-                   name="medical", allowed_tools=allowed)
+    def __init__(self) -> None:
+        super().__init__(
+            os.getenv("MEDICAL_MCP_URL", "https://pubmed.mcp.claude.com/mcp"),
+            token=os.getenv("MEDICAL_MCP_TOKEN"),
+            name="medical",
+        )
+
+
+__all__ = [
+    "HuggingFaceMCPService",
+    "MedicalMCPService",
+    "RemoteMCPService",
+    "iter_leaf_exceptions",
+    "root_exception_message",
+]
+

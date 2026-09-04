@@ -22,13 +22,11 @@ trace -> faithfulness/relevance/confidence evaluation -> optional human handoff.
 - `semantic_search`: meaning-based vector similarity search over indexed nodes.
 - `bm25_search`: keyword retrieval over indexed document nodes.
 - `hybrid_document_search`: semantic + BM25 fusion/reranking.
-- Hugging Face MCP tools: external model discovery/capabilities.
+- Hugging Face MCP tools: the configured external MCP capability. The agent
+  selects a discovered search/retrieval tool only when its description can
+  supply relevant external content.
 - `hf_inference`: executes a specific Hugging Face model after model selection; it is
   not a document/literature retriever.
-- Optional medical MCP tools: configure `HF_MCP_URL` (and optionally
-  `HF_TOKEN`) for a bioHugging Face MCP server such as a PubMed-capable
-  server. The agent is prompted to use local documents first and only use a suitable
-  medical external retrieval tool when local evidence is insufficient.
 
 ### Safety and metadata
 
@@ -51,8 +49,9 @@ ID, trace ID, scores, source/tool context and email notification.
 ## Medical knowledge fallback
 
 For a question such as "What is the structure of the eye?", the agent should first use
-local document retrieval. If the returned evidence is missing or insufficient, it may
-call a configured medical/biomedical MCP retrieval tool. Hugging Face `model_search`
+local document retrieval. If the returned evidence is missing or insufficient, it
+re-plans with the configured Hugging Face MCP tools. A Hub model/repository listing
 alone is not treated as medical evidence, and `hf_inference` is not used as a replacement
-for reliable anatomy/literature retrieval. If no reliable evidence source is available,
-the answer should state the limitation and allow the handoff policy to decide escalation.
+for reliable anatomy/literature retrieval. If no suitable Hugging Face retrieval tool
+is available, the answer states the limitation and allows the handoff policy to decide
+escalation.

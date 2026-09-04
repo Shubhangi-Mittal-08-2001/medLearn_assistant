@@ -76,7 +76,9 @@ class QueryRouter:
         r"receptor|mechanoreceptor|nociceptor|thermoreceptor|proprioception|"
         r"pain|temperature|vibration|texture|merkel|meissner|pacinian|ruffini|"
         r"muscle|spindle|intrafusal|extrafusal|afferent|neuron|neural|nervous|"
-        r"joint|tendon|golgi|motor|reflex|limb|grip)\b",
+        r"joint|tendon|golgi|motor|reflex|limb|hand|grip|numbness|tingling|"
+        r"weakness|fever|chills|headache|hemoglobin|platelet|blood|"
+        r"laboratory|lab|reference\s+range)\b",
         re.IGNORECASE,
     )
 

@@ -2,23 +2,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from main.service.mcp_client import MedicalMCPService, RemoteMCPService
-
-
-def test_medical_mcp_is_optional(monkeypatch):
-    monkeypatch.delenv("MEDICAL_MCP_URL", raising=False)
-    monkeypatch.delenv("MCP_SERVER_URL", raising=False)
-    assert MedicalMCPService.from_environment() is None
-
-
-def test_medical_mcp_reads_url_token_and_allow_list(monkeypatch):
-    monkeypatch.setenv("MEDICAL_MCP_URL", "https://medical.example/mcp")
-    monkeypatch.setenv("MEDICAL_MCP_TOKEN", "secret-token")
-    monkeypatch.setenv("MEDICAL_MCP_ALLOWED_TOOLS", "pubmed_search, article_details")
-    service = MedicalMCPService.from_environment()
-    assert service is not None
-    assert service.url == "https://medical.example/mcp"
-    assert service.allowed_tools == {"pubmed_search", "article_details"}
+from main.service.mcp_client import RemoteMCPService
 
 
 @pytest.mark.asyncio
