@@ -984,6 +984,19 @@ Tool-call contract:
             evaluate_faithfulness_score(langfuse_client, trace_id, question, context, answer),
             evaluate_answer_relevance(langfuse_client, trace_id, question, answer),
         )
+        confidence = (faithfulness + relevance) / 2
+        try:
+            langfuse_client.create_score(
+                trace_id=trace_id,
+                name="confidence",
+                value=confidence,
+                comment=(
+                    "RAG confidence derived from faithfulness and answer relevance: "
+                    f"{confidence:.2f}"
+                ),
+            )
+        except Exception as e:
+            logger.warning(f"Failed to record Langfuse confidence score: {e}")
         
         # Flush scores immediately to Langfuse for real-time pushing
         if langfuse_client is not None and hasattr(langfuse_client, 'flush'):
@@ -992,7 +1005,7 @@ Tool-call contract:
             except Exception as e:
                 logger.warning(f"Failed to flush Langfuse scores: {e}")
         
-        return faithfulness, relevance, (faithfulness + relevance) / 2
+        return faithfulness, relevance, confidence
 
     async def _evaluate_mcp_evidence(self, question: str, answer: str) -> float:
         usable = [

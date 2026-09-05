@@ -436,6 +436,16 @@ async def query_rag(
                     round(float(overall_confidence) * 100)
                     if overall_confidence is not None else None
                 )
+                if overall_confidence is not None:
+                    try:
+                        langfuse.create_score(
+                            trace_id=trace_id,
+                            name="confidence",
+                            value=float(overall_confidence),
+                            comment="Source-aware confidence score",
+                        )
+                    except Exception as score_exc:
+                        logger.warning("Unable to record confidence score: %s", score_exc)
                 confidence_handoff = {
                     "trigger": confidence_percent is not None and confidence_percent < CONFIDENCE_THRESHOLD,
                     "reason": "source-aware confidence below threshold",
@@ -617,6 +627,15 @@ async def query_rag(
             logger.warning("Confidence evaluation unavailable: %s", exc)
             confidence_handoff = {"trigger": False, "confidence": 50}
         confidence_score = confidence_handoff["confidence"]
+        try:
+            langfuse.create_score(
+                trace_id=trace_id,
+                name="confidence",
+                value=float(confidence_score) / 100,
+                comment="LLM confidence score",
+            )
+        except Exception as score_exc:
+            logger.warning("Unable to record confidence score: %s", score_exc)
 
         # ----------------------------------------------------
         # 4. LLM Intent Detection 

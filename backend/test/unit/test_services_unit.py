@@ -121,11 +121,35 @@ async def test_classify_intent_llm_and_keyword_fallback(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_classify_intent_accepts_uploaded_document_query(monkeypatch):
+    llm = SimpleNamespace(acomplete=AsyncMock())
+    monkeypatch.setattr(handoff_service.Settings, "_llm", llm)
+
+    result = await handoff_service.classify_medical_intent(
+        "Summarize a concept from my uploaded document"
+    )
+
+    assert result == {
+        "medical": True,
+        "reason": "document-grounded medical education query",
+    }
+    llm.acomplete.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_confidence_score_parsing_and_failure(monkeypatch):
     llm = SimpleNamespace(acomplete=AsyncMock(return_value=SimpleNamespace(text="Confidence: 35")))
     monkeypatch.setattr(handoff_service.Settings, "_llm", llm)
+    langfuse = MagicMock()
+    monkeypatch.setattr(handoff_service, "langfuse", langfuse)
     result = await handoff_service.evaluate_confidence_score("answer", "question", [{"text": "context"}])
     assert result["trigger"] is True and result["confidence"] == 35
+    langfuse.create_score.assert_called_once_with(
+        name="confidence",
+        value=35,
+        comment="LLM confidence score: 35",
+    )
+    langfuse.flush.assert_called_once_with()
     llm.acomplete.return_value = SimpleNamespace(text="100")
     result = await handoff_service.evaluate_confidence_score("answer", "question", [])
     assert result["confidence"] == 100 and result["trigger"] is False

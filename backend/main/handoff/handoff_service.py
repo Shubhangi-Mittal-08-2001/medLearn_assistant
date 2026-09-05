@@ -25,6 +25,13 @@ EXPLICIT_HANDOFF_PATTERN = re.compile(
     r"\b(?:human|agent|person|doctor|support|representative)\b.{0,40}\b(?:please|help|now)\b",
     re.IGNORECASE,
 )
+DOCUMENT_QUERY_PATTERN = re.compile(
+    r"\b(?:uploaded|indexed|course|lesson|textbook|knowledge\s+base)\b.{0,40}"
+    r"\b(?:document|file|material|content|concept|chapter|section)\b|"
+    r"\b(?:document|file|material|content|concept|chapter|section)\b.{0,40}"
+    r"\b(?:uploaded|indexed|course|lesson|textbook|knowledge\s+base)\b",
+    re.IGNORECASE,
+)
 
 SMTP_HOST = os.getenv("SMTP_HOST")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
@@ -46,31 +53,46 @@ def is_explicit_handoff_request(message: str) -> bool:
     """Return whether the user directly asks to be transferred to a person."""
     return bool(EXPLICIT_HANDOFF_PATTERN.search(message))
 
+from langfuse import get_client
+
+langfuse = get_client()
+
+INTENT_PROMPT_NAME = "MEDLEARN_INTENT_CLASSIFIER"
+
+
+def get_intent_prompt(message: str) -> str:
+    """Fetch and compile the intent classification prompt from Langfuse."""
+
+    prompt = langfuse.get_prompt(
+        name=INTENT_PROMPT_NAME,
+        label="production",
+    )
+
+    return prompt.compile(
+        message=message,
+    )
+
+
+__all__ = [
+    "INTENT_PROMPT_NAME",
+    "get_intent_prompt",
+]
 
 async def classify_medical_intent(message: str) -> Dict[str, Any]:
     """Classify whether a query is medical before any agent invocation."""
-    intent_prompt = f"""Classify the user's query by intent before it is routed.
 
-Return exactly one label: MEDICAL or NON_MEDICAL.
+    if DOCUMENT_QUERY_PATTERN.search(message):
+        return {
+            "medical": True,
+            "reason": "document-grounded medical education query",
+        }
 
-Use the query's meaning and medical indicators, including anatomy, physiology,
-symptoms, diseases, diagnosis, treatment, medication, laboratory values,
-clinical terminology, medical specialties such as dentistry, orthodontics,
-oral health, and surgery, medical education, named clinical rules, or
-questions about uploaded medical course material. A request to speak to a
-human is not itself medical evidence.
-Classify general conversation, coding, travel, finance, entertainment, and
-other unrelated requests as NON_MEDICAL.
-
-<user_query>
-{message}
-</user_query>
-
-Label:"""
     try:
         llm = Settings.llm
         if llm is None:
             raise ValueError("LLM is not configured in Settings.")
+        intent_prompt = get_intent_prompt(message)
+        logger.debug("prompt for intent classification: done successfully")
         response = await llm.acomplete(intent_prompt)
         label_match = re.search(r"\b(MEDICAL|NON_MEDICAL)\b", response.text.upper())
         if label_match:
@@ -179,6 +201,15 @@ Return only one integer from 0 to 100.
             score_match = re.search(r"\b(100|[0-9]{1,2})\b", confidence_response.text)
         confidence_score = int(score_match.group(1)) if score_match else 50
         confidence_score = max(0, min(100, confidence_score))
+        try:
+            langfuse.create_score(
+                name="confidence",
+                value=confidence_score,
+                comment=f"LLM confidence score: {confidence_score}",
+            )
+            langfuse.flush()
+        except Exception as exc:
+            logger.warning("Unable to flush confidence score to Langfuse: %s", exc)
         logger.info(
             "Confidence evaluation completed (score=%d, trigger=%s)",
             confidence_score,

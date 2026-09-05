@@ -24,6 +24,53 @@ load_dotenv()
 DATASET_NAME = "medlearn"
 
 
+from langfuse import get_client
+
+langfuse = get_client()
+
+FAITHFULNESS_PROMPT_NAME = "MEDLEARN_FAITHFULNESS_JUDGE"
+RELEVANCE_PROMPT_NAME = "MEDLEARN_RELEVANCE_JUDGE"
+
+
+def get_faithfulness_prompt(
+    query: str,
+    context: str,
+    answer: str,
+) -> str:
+
+    prompt = langfuse.get_prompt(
+        name=FAITHFULNESS_PROMPT_NAME,
+        label="production",
+    )
+
+    return prompt.compile(
+        query=query,
+        context=context,
+        answer=answer,
+    )
+
+def get_relevance_prompt(
+    query: str,
+    answer: str,
+) -> str:
+    prompt = langfuse.get_prompt(
+        name=RELEVANCE_PROMPT_NAME,
+        label="production",
+    )
+
+    return prompt.compile(
+        query=query,
+        answer=answer,
+    )
+
+
+__all__ = [
+    "FAITHFULNESS_PROMPT_NAME",
+    "RELEVANCE_PROMPT_NAME",
+    "get_faithfulness_prompt",
+    "get_relevance_prompt",
+]
+
 async def evaluate_faithfulness_score(
     langfuse,
     trace_id: str,
@@ -36,33 +83,13 @@ async def evaluate_faithfulness_score(
     Uses Settings.llm (Azure OpenAI configured in initialize_services).
     """
 
-    judge_prompt = f"""
-You are evaluating a RAG system's answer for faithfulness.
 
-Question: {query}
-
-Retrieved Context:
-{context}
-
-Generated Answer:
-{answer}
-
-Task: Rate faithfulness from 0.0 to 1.0:
-- 1.0 = Every claim in the answer is explicitly supported by the context
-- 0.7-0.9 = Most claims supported, minor unsupported details
-- 0.4-0.6 = Mix of supported and unsupported claims
-- 0.1-0.3 = Few claims supported, significant fabrication
-- 0.0 = Answer contradicts context or is entirely invented
-
-Provide step-by-step reasoning, then give your score.
-
-Format:
-Reasoning: [Identify each claim and verify against context]
-Score: [0.0 to 1.0]
-"""
 
     try:
         # Use the same LLM your RAG uses (AzureOpenAI via LlamaIndex Settings)
+        judge_prompt = get_faithfulness_prompt(query, context, answer)
+        logger.info("Faithfulness judge prompt done successfully for trace")
+
         response = Settings.llm.complete(judge_prompt)
         judgment = response.text
 
@@ -100,26 +127,8 @@ async def evaluate_answer_relevance(
     Evaluate how well the answer addresses the question (0.0 - 1.0).
     """
 
-    judge_prompt = f"""
-You are evaluating how well an answer addresses a user's question.
-
-Question: {query}
-
-Answer: {answer}
-
-Task: Rate answer relevance from 0.0 to 1.0:
-- 1.0 = Directly and completely answers the question
-- 0.7-0.9 = Answers the question but includes some extra or tangential info
-- 0.4-0.6 = Partially relevant, missing key points
-- 0.1-0.3 = Mostly irrelevant to the question
-- 0.0 = Completely unrelated
-
-Provide reasoning, then score.
-
-Format:
-Reasoning: [explain relevance]
-Score: [0.0 to 1.0]
-"""
+    judge_prompt = get_relevance_prompt(query, answer)
+    logger.info("Relevance judge prompt done successfully for trace")
 
     try:
         response = Settings.llm.complete(judge_prompt)

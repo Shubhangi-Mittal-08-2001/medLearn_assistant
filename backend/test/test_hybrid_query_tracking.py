@@ -1,6 +1,7 @@
 import asyncio
 import unittest
 from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import patch
 from pydantic import BaseModel, ConfigDict
 
 from main.service.hybrid_query_service import (
@@ -44,6 +45,32 @@ class TrackingToolTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, "document evidence")
         inner.acall.assert_awaited_once_with(input="long-term GLP-1 effects")
+
+    async def test_rag_evaluation_flushes_confidence_score(self):
+        service = HybridQueryService()
+        service.source_nodes[:] = [{"text": "document evidence"}]
+        langfuse = MagicMock()
+
+        with patch(
+            "main.service.hybrid_query_service.get_langfuse_client",
+            return_value=langfuse,
+        ), patch(
+            "main.service.hybrid_query_service.evaluate_faithfulness_score",
+            new=AsyncMock(return_value=0.8),
+        ), patch(
+            "main.service.hybrid_query_service.evaluate_answer_relevance",
+            new=AsyncMock(return_value=0.6),
+        ):
+            result = await service._evaluate_rag_evidence("question", "answer")
+
+        self.assertEqual(result, (0.8, 0.6, 0.7))
+        langfuse.create_score.assert_called_once_with(
+            trace_id="hybrid-query-evaluation",
+            name="confidence",
+            value=0.7,
+            comment="RAG confidence derived from faithfulness and answer relevance: 0.70",
+        )
+        langfuse.flush.assert_called_once_with()
 
     async def test_hf_inference_uses_only_canonical_arguments(self):
         search_result = {"repo_id": "test-org/medical-classifier"}
