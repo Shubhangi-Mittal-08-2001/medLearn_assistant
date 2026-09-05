@@ -262,14 +262,14 @@ async def upload_document(
         file_size = len(content)
         logger.info(f"[UPLOAD] File read: {file.filename}, Size: {file_size} bytes ({file_size/1024:.2f} KB)")
 
-        # Validate file size (10 MB)
-        if file_size > 10 * 1024 * 1024:
+        # Validate file size against the configured upload limit.
+        if file_size > MAX_FILE_SIZE:
             logger.warning(
                 f"[UPLOAD] File size exceeds limit: {file.filename} ({file_size} bytes)"
             )
             raise HTTPException(
                 status_code=400,
-                detail="File size exceeds 10MB limit",
+                detail=f"File size exceeds {MAX_FILE_SIZE_KB} KB limit",
             )
 
         # Save uploaded content to a temporary file
@@ -436,6 +436,16 @@ async def query_rag(
                     round(float(overall_confidence) * 100)
                     if overall_confidence is not None else None
                 )
+                if overall_confidence is not None:
+                    try:
+                        langfuse.create_score(
+                            trace_id=trace_id,
+                            name="confidence",
+                            value=float(overall_confidence),
+                            comment="Source-aware confidence score",
+                        )
+                    except Exception as score_exc:
+                        logger.warning("Unable to record confidence score: %s", score_exc)
                 confidence_handoff = {
                     "trigger": confidence_percent is not None and confidence_percent < CONFIDENCE_THRESHOLD,
                     "reason": "source-aware confidence below threshold",
@@ -617,6 +627,15 @@ async def query_rag(
             logger.warning("Confidence evaluation unavailable: %s", exc)
             confidence_handoff = {"trigger": False, "confidence": 50}
         confidence_score = confidence_handoff["confidence"]
+        try:
+            langfuse.create_score(
+                trace_id=trace_id,
+                name="confidence",
+                value=float(confidence_score) / 100,
+                comment="LLM confidence score",
+            )
+        except Exception as score_exc:
+            logger.warning("Unable to record confidence score: %s", score_exc)
 
         # ----------------------------------------------------
         # 4. LLM Intent Detection 

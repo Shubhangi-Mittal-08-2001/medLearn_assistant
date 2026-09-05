@@ -121,6 +121,22 @@ async def test_classify_intent_llm_and_keyword_fallback(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_classify_intent_accepts_uploaded_document_query(monkeypatch):
+    llm = SimpleNamespace(acomplete=AsyncMock())
+    monkeypatch.setattr(handoff_service.Settings, "_llm", llm)
+
+    result = await handoff_service.classify_medical_intent(
+        "Summarize a concept from my uploaded document"
+    )
+
+    assert result == {
+        "medical": True,
+        "reason": "document-grounded medical education query",
+    }
+    llm.acomplete.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_confidence_score_parsing_and_failure(monkeypatch):
     llm = SimpleNamespace(acomplete=AsyncMock(return_value=SimpleNamespace(text="Confidence: 35")))
     monkeypatch.setattr(handoff_service.Settings, "_llm", llm)
