@@ -44,3 +44,4 @@ Thumbs.db
 *.backend/.env
 backend/.env
 *.env
+*.coverage
