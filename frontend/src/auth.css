@@ -1,0 +1,3 @@
+.login-card label { display: none; }
+.auth-callback { min-height: 100vh; display: flex; align-items: center; justify-content: center; gap: 12px; color: #526779; background: #f7fafb; }
+.spinner.dark { border-color: #c9dcdd; border-top-color: #247b78; }

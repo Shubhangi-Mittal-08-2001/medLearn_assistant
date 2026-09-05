@@ -1,89 +1,125 @@
+"""Reusable clients for remote streamable-HTTP MCP servers."""
+from __future__ import annotations
+
 import logging
 import os
-from typing import List, Any
+from collections.abc import Iterable
+from typing import Any
 
 from dotenv import load_dotenv
-from llama_index.core.tools import BaseTool
-
-# Note: In a real environment, ensure 'mcp' and 'llama-index-tools-mcp' are installed.
-# This implementation mocks the library structure based on the Sprint Doc's API description
-# if the specific library version isn't perfectly aligned, but assumes the interface exists.
-try:
-    from llama_index.tools.mcp import BasicMCPClient, McpToolSpec
-except ImportError:
-    # Fallback or mock for demonstration if specific package combination is tricky in generated code
-    logging.warning("llama-index-tools-mcp not found. Ensure dependencies are installed.")
-    BasicMCPClient = Any
-    McpToolSpec = Any
+from llama_index.core.tools import BaseTool, FunctionTool
+from llama_index.tools.mcp import BasicMCPClient, McpToolSpec
 
 load_dotenv()
 logger = logging.getLogger(__name__)
 
-class HuggingFaceMCPService:
-    """
-    Service to handle connections to the Hugging Face MCP Server.
-    """
+
+def iter_leaf_exceptions(exc: BaseException):
+    children = getattr(exc, "exceptions", None)
+    if children:
+        for child in children:
+            yield from iter_leaf_exceptions(child)
+    else:
+        yield exc
+
+
+def root_exception_message(exc: BaseException) -> str:
+    leaves = list(iter_leaf_exceptions(exc))
+    return "; ".join(f"{type(item).__name__}: {item}" for item in leaves) or str(exc)
+
+
+async def _close_client(client: Any) -> None:
+    close = getattr(getattr(client, "http_client", None), "aclose", None)
+    if close is not None:
+        await close()
+
+
+class RemoteMCPService:
+    """Discover and execute tools from one authenticated remote MCP server."""
+
+    def __init__(self, url: str, *, token: str | None = None, name: str = "remote_mcp",
+                 allowed_tools: Iterable[str] | None = None) -> None:
+        if not url or not url.strip():
+            raise ValueError(f"{name} URL is required")
+        self.url = url.strip()
+        self.name = name
+        self.allowed_tools = set(allowed_tools or []) or None
+        self.headers = {"Authorization": f"Bearer {token}"} if token else {}
+
+    async def load_tools(self, allowed_tools: list[str] | None = None) -> list[BaseTool]:
+        selected = set(allowed_tools or []) or self.allowed_tools
+        logger.info("Connecting to %s MCP server at %s", self.name, self.url)
+        discovery_client = BasicMCPClient(command_or_url=self.url, headers=self.headers)
+        try:
+            discovered = await McpToolSpec(client=discovery_client).to_tool_list_async()
+            tools: list[BaseTool] = []
+            for tool in discovered:
+                metadata = tool.metadata
+                if selected is not None and metadata.name not in selected:
+                    continue
+                self._improve_huggingface_metadata(metadata)
+
+                async def invoke(_tool_name=metadata.name, **arguments):
+                    client = BasicMCPClient(command_or_url=self.url, headers=self.headers)
+                    try:
+                        result = await client.call_tool(_tool_name, arguments)
+                        logger.info("mcp.tool.result server=%s name=%s status=%s", self.name,
+                                    _tool_name, "error" if getattr(result, "isError", False) else "success")
+                        return result
+                    finally:
+                        await _close_client(client)
+
+                tools.append(FunctionTool.from_defaults(async_fn=invoke, tool_metadata=metadata))
+                logger.info("mcp.tool.discovered server=%s name=%s", self.name, metadata.name)
+            logger.info("Loaded %d tools from %s MCP", len(tools), self.name)
+            return tools
+        except Exception as exc:
+            for leaf in iter_leaf_exceptions(exc):
+                logger.error("mcp.connection.error server=%s type=%s message=%s", self.name,
+                             type(leaf).__name__, leaf)
+            raise ConnectionError(
+                f"Could not connect to {self.name} MCP server: {root_exception_message(exc)}"
+            ) from exc
+        finally:
+            await _close_client(discovery_client)
+
+    @staticmethod
+    def _improve_huggingface_metadata(metadata: Any) -> None:
+        if metadata.name == "hub_repo_search":
+            metadata.description += (' For inference searches use repo_types=["model"], put task and '
+                                     'language tags in filters, and prefer sort="downloads". Use only schema fields.')
+        elif metadata.name == "hub_repo_details":
+            metadata.description += (" Pass repo_ids as a non-empty JSON array. Confirm the pipeline task "
+                                     "and a live inference provider before selecting a model.")
+
+
+class HuggingFaceMCPService(RemoteMCPService):
+    """Hugging Face Hub MCP integration for repository/model operations."""
 
     def __init__(self) -> None:
-        """
-        Initialize the service with configuration credentials.
-        """
-        self.url = os.getenv("HF_MCP_URL", "https://huggingface.co/mcp")
-        self.token = os.getenv("HF_TOKEN")
-        if not self.token:
-            raise ValueError("HF_TOKEN environment variable is required")
-        self.headers = {"Authorization": f"Bearer {self.token}"}
+        token = os.getenv("HF_TOKEN")
+        if not token:
+            raise ValueError("HF_TOKEN is required to enable Hugging Face MCP")
+        super().__init__(os.getenv("HF_MCP_URL", "https://huggingface.co/mcp"), token=token,
+                         name="huggingface")
 
-    async def load_tools(self, allowed_tools: List[str] | None = None) -> List[BaseTool]:
-        """
-        Connects to the remote MCP server and wraps capabilities as LlamaIndex tools.
 
-        Args:
-            allowed_tools (List[str] | None): A list of tool names to filter (e.g., ['search_models']).
-                                              If None, returns all discovered tools.
+class MedicalMCPService(RemoteMCPService):
+    """External medical literature MCP integration used when HF inference fails."""
 
-        Returns:
-            List[BaseTool]: A list of executable LlamaIndex tools.
+    def __init__(self) -> None:
+        super().__init__(
+            os.getenv("MEDICAL_MCP_URL", "https://pubmed.mcp.claude.com/mcp"),
+            token=os.getenv("MEDICAL_MCP_TOKEN"),
+            name="medical",
+        )
 
-        Raises:
-            ConnectionError: If connection to MCP server fails.
-        """
-        logger.info(f"Connecting to MCP Server at {self.url}...")
-        
-        try:
-            # 1. Initialize Client
-            # 
-            # NOTE: You may see a 405 "Method Not Allowed" error in logs when the client first connects.
-            # This is expected behavior and does not indicate a failure:
-            # 
-            # - BasicMCPClient initially attempts to use GET requests for SSE (Server-Sent Events) streaming
-            # - The HuggingFace MCP server only supports POST requests (not GET for SSE)
-            # - The client automatically detects the 405 error and retries using POST-based streamable-http transport
-            # - The connection succeeds after the automatic retry
-            # 
-            # This retry mechanism is built into the MCP client library and ensures compatibility
-            # with servers that only support POST-based transports (like HuggingFace's MCP server).
-            client = BasicMCPClient(
-                command_or_url=self.url,
-                headers=self.headers
-            )
-            
-            # 2. Wrap as LlamaIndex Tools
-            tool_spec = McpToolSpec(client=client)
-            
-            # 3. Get all tools using async method
-            tools = await tool_spec.to_tool_list_async()
-            
-            # 4. Filter specific tools if requested
-            if allowed_tools:
-                filtered_tools = [t for t in tools if t.metadata.name in allowed_tools]
-                logger.info(f"Filtered to {len(filtered_tools)} tools from {len(tools)} available")
-                logger.info(f"Successfully loaded {len(filtered_tools)} tools: {[t.metadata.name for t in filtered_tools]}")
-                return filtered_tools
-                
-            logger.info(f"Successfully loaded {len(tools)} tools: {[t.metadata.name for t in tools]}")
-            return tools
-            
-        except Exception as e:
-            logger.error(f"Failed to load MCP tools: {str(e)}")
-            raise ConnectionError(f"Could not connect to HF MCP Server: {e}")
+
+__all__ = [
+    "HuggingFaceMCPService",
+    "MedicalMCPService",
+    "RemoteMCPService",
+    "iter_leaf_exceptions",
+    "root_exception_message",
+]
+

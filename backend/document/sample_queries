@@ -1,0 +1,31 @@
+Explain how Pacinian and Meissner corpuscles detect vibration.
+
+What is the difference between intrafusal and extrafusal muscle fibers?
+
+What is the receptor density of Merkel receptors in human digits?
+
+What are the reference ranges for hemoglobin and platelets?
+
+Explain how muscle spindles work and list the receptor density of Merkel receptors.
+
+Hugging Face:
+
+Use Hugging Face to classify this sentence: The patient reports chest pain.
+
+Use Hugging Face to classify this sentence: The patient has a mild fever.
+
+Use Hugging Face to classify this sentence: The patient reports numbness in the left hand.
+
+
+Explicit human handoff: I want to speak with a human doctor about pain receptors.
+
+Low-confidence/empty-retrieval handoff: Explain the newly discovered receptor called Zeta-9 in human joints.
+
+Out-of-scope rejection: How do I find houses in Bangalore?
+
+rag+mcp
+Explain how muscle spindles work using my uploaded documents, then verify the explanation with recent medical literature.
+
+Compare Pacinian and Meissner corpuscles from my course material and cite an external biomedical source.
+
+Explain the receptor density of Merkel receptors from the knowledge base and confirm it using PubMed research.

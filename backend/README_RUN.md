@@ -48,6 +48,22 @@ evaluation scores, handoff status, and trace ID.
 
 > `.env` is intentionally not included in the packaged backend. Keep secrets local.
 
+## MCP integrations
+
+- `HF_MCP_URL` exposes Hugging Face MCP tools; set `HF_TOKEN` to enable it.
+  This is the application's only external MCP integration.
+
+Hub search neither retrieves medical literature nor executes a model. The separate
+`hf_inference` tool uses Inference Providers. Its fine-grained token must include
+**Make calls to Inference Providers**; otherwise inference returns HTTP 403 even when
+MCP discovery succeeds. `HF_INFERENCE_PROVIDER` defaults to `auto`.
+
+An unavailable MCP server is recorded in `tool_errors`; SQL and local RAG remain usable.
+When local document evidence scores below `RAG_FAITHFULNESS_THRESHOLD` or
+`RAG_RELEVANCE_THRESHOLD` (both default to `0.70`), the service re-plans with the
+configured Hugging Face MCP tools. It only accepts tools that can retrieve relevant
+external content; a model/repository listing alone is not presented as medical evidence.
+
 ## Supported upload formats
 
 Set the application upload configuration to:

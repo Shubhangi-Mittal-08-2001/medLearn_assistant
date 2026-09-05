@@ -1,7 +1,9 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from main.routes.routes import router, set_agent_service
 from main.service.agent_service import AgentService
 
@@ -44,6 +46,27 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Browser clients must be explicitly trusted because authenticated requests
+# include an Authorization header. Override this comma-separated list in
+# deployed environments; wildcard origins are intentionally not used.
+cors_origins = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    ).split(",")
+    if origin.strip()
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
+)
+logger.info("CORS enabled for origins: %s", cors_origins)
 
 app.include_router(router)
 logger.info(f"FastAPI app initialized with version {app.version}")

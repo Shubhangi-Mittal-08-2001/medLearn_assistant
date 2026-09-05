@@ -8,10 +8,12 @@ import re
 import logging
 import tempfile
 import time
+import json
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Depends, status
+from fastapi.responses import StreamingResponse
 from fastapi.security import OAuth2PasswordBearer
 
 from main.service.rag_service import (
@@ -28,10 +30,12 @@ from main.evaluation.dataset_evaluation import (
     evaluate_answer_relevance,
 )
 from main.handoff.handoff_service import (
+    CONFIDENCE_THRESHOLD,
     evaluate_score,
     send_handoff_email,
     generate_handoff_reference_id,
-    evaluate_explicit_user_request,
+    is_explicit_handoff_request,
+    classify_medical_intent,
     evaluate_confidence_score,
 )
 import secrets
@@ -138,7 +142,6 @@ def _guarded_response(question: str, answer: str, source_nodes: list[dict], inpu
     """Apply output guardrails and consistently expose their decision to clients."""
     output = _guardrails_validator.validate_and_sanitize_output(answer)
     sanitized_source_nodes = []
-    retrieved_nodes = []
     source_phi_summaries = []
     for node in source_nodes:
         sanitized_node = dict(node)
@@ -149,11 +152,6 @@ def _guarded_response(question: str, answer: str, source_nodes: list[dict], inpu
         if "content" in sanitized_node:
             sanitized_node["content"] = node_output.sanitized_text
         sanitized_source_nodes.append(sanitized_node)
-        retrieved_nodes.append(NodeResponse(
-            text=node_output.sanitized_text,
-            score=node.get("score"),
-            source=node.get("source"),
-        ))
         source_phi_summaries.extend(node_output.pii_summaries)
 
     pii_summaries = list(dict.fromkeys(
@@ -162,11 +160,12 @@ def _guarded_response(question: str, answer: str, source_nodes: list[dict], inpu
     return QueryResponse(
         query=question,
         answer=output.sanitized_text,
-        retrieved_nodes=retrieved_nodes,
         source_nodes=sanitized_source_nodes,
         validation_results=ValidationResults(
             input_allowed=True,
-            pii_detected=input_decision.phi_detected or output.pii_detected or bool(source_phi_summaries),
+            # This legacy field consistently describes the original request.
+            # Output/source sanitization is reported separately below.
+            pii_detected=input_decision.phi_detected,
             pii_summaries=pii_summaries,
             output_sanitized=output.output_sanitized or bool(source_phi_summaries),
             output_blocked=output.blocked,
@@ -343,7 +342,9 @@ async def query_rag(
         logger.warning("Blocked query input: %s", input_decision.reason)
         raise HTTPException(status_code=400, detail=input_decision.reason)
     request.question = input_decision.sanitized_text
-    if not QueryRouter.is_relevant_to_medlearn_documents(request.question):
+    # Classify intent before invoking any agent or retrieval tool.
+    intent = await classify_medical_intent(request.question)
+    if not intent["medical"]:
         # Do not reject a question simply because the current knowledge base
         # cannot cover it.  It cannot be answered reliably with the available
         # sources/tools, so create the same human-review handoff used for
@@ -355,7 +356,7 @@ async def query_rag(
             "timestamp_utc": datetime.datetime.now(datetime.UTC).isoformat(),
             "session_id": secrets.token_hex(8),
             "priority": "normal",
-            "trigger_reason": "query is not supported by the available knowledge base and tools",
+            "trigger_reason": intent["reason"],
             "query_history": [{"role": "user", "message": request.question}],
             "generated_answer": None,
             "evaluation_scores": {
@@ -420,39 +421,44 @@ async def query_rag(
                     },
                 )
                 trace_id = span.trace_id
-                context = "\n\n".join(
-                    str(node.get("text", ""))
-                    for node in result.source_nodes
-                    if node.get("text")
-                )
-
-                faithfulness = await evaluate_faithfulness_score(
-                    langfuse, trace_id, request.question, context, result.answer
-                )
-                relevance = await evaluate_answer_relevance(
-                    langfuse, trace_id, request.question, result.answer
-                )
+                # HybridQueryService has already evaluated the final answer against
+                # the evidence type actually used. Do not run document evaluators
+                # against MCP/Hugging Face or SQL output here.
+                evaluation = result.evaluation
+                faithfulness = evaluation.get("faithfulness")
+                relevance = evaluation.get("relevance")
 
                 # The agent path is the primary /query path.  Apply the same
                 # handoff decision and delivery logic used by legacy retrieval
                 # before returning its response.
-                try:
-                    confidence_handoff = await evaluate_confidence_score(result.answer)
-                except Exception as exc:
-                    logger.warning("Confidence evaluation unavailable: %s", exc)
-                    confidence_handoff = {"trigger": False, "confidence": 50}
-                try:
-                    explicit_handoff = await evaluate_explicit_user_request(request.question)
-                except Exception as exc:
-                    logger.warning("Explicit handoff evaluation unavailable: %s", exc)
-                    explicit_handoff = {"trigger": False, "reason": "evaluation unavailable"}
+                overall_confidence = evaluation.get("overall_confidence")
+                confidence_percent = (
+                    round(float(overall_confidence) * 100)
+                    if overall_confidence is not None else None
+                )
+                confidence_handoff = {
+                    "trigger": confidence_percent is not None and confidence_percent < CONFIDENCE_THRESHOLD,
+                    "reason": "source-aware confidence below threshold",
+                    "confidence": confidence_percent,
+                }
+                explicit_handoff = {
+                    "trigger": is_explicit_handoff_request(request.question),
+                    "reason": "explicit user request for human help",
+                }
 
                 full_chunks = list(result.source_nodes)
-                score_based_handoff = evaluate_score(
-                    faithfulness,
-                    relevance,
-                    request.question,
-                    no_chunks=not full_chunks,
+                rag_used = evaluation.get("mode") in {"rag", "rag+mcp"}
+                # Chunk-based handoff scoring applies only when document retrieval
+                # actually contributed evidence.
+                score_based_handoff = (
+                    evaluate_score(
+                        faithfulness,
+                        relevance,
+                        request.question,
+                        no_chunks=not full_chunks,
+                    )
+                    if rag_used
+                    else {"trigger": False, "reason": "non-RAG source-aware evaluation"}
                 )
                 if explicit_handoff["trigger"]:
                     handoff, priority = explicit_handoff, "high"
@@ -602,7 +608,11 @@ async def query_rag(
 
         # LLM confidence 
         try:
-            confidence_handoff = await evaluate_confidence_score(answer)
+            confidence_handoff = await evaluate_confidence_score(
+                answer=answer,
+                question=request.question,
+                relevant_chunks=full_chunks,
+            )
         except Exception as exc:
             logger.warning("Confidence evaluation unavailable: %s", exc)
             confidence_handoff = {"trigger": False, "confidence": 50}
@@ -611,11 +621,10 @@ async def query_rag(
         # ----------------------------------------------------
         # 4. LLM Intent Detection 
         # ----------------------------------------------------
-        try:
-            explicit_handoff = await evaluate_explicit_user_request(request.question)
-        except Exception as exc:
-            logger.warning("Explicit user request evaluation unavailable: %s", exc)
-            explicit_handoff = {"trigger": False, "reason": "evaluation unavailable"}
+        explicit_handoff = {
+            "trigger": is_explicit_handoff_request(request.question),
+            "reason": "explicit user request for human help",
+        }
 
         # ----------------------------------------------------
         # 5. FINAL HANDOFF DECISION 
@@ -758,6 +767,28 @@ async def query_rag(
             input_decision=input_decision,
             routing="handoff",
         )
+
+
+@router.post("/query/stream")
+async def query_rag_stream(
+    request: QueryRequest,
+    background_tasks: BackgroundTasks,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+):
+    """Stream the existing query response without changing query generation."""
+    response = await query_rag(request, background_tasks, current_user)
+    answer = response.answer
+
+    async def events():
+        for index in range(0, len(answer), 160):
+            yield f"event: chunk\ndata: {json.dumps({'content': answer[index:index + 160]})}\n\n"
+        yield f"event: done\ndata: {json.dumps(response.model_dump(mode='json'))}\n\n"
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.get("/")

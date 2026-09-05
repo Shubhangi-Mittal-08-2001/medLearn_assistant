@@ -1719,7 +1719,7 @@ requires-dist = [
     { name = "guardrails-ai", specifier = "==0.10.2" },
     { name = "guardrails-ai-detect-pii", specifier = "==0.0.6" },
     { name = "httpx", specifier = ">=0.27.0" },
-    { name = "huggingface-hub", specifier = ">=0.20.0" },
+    { name = "huggingface-hub", specifier = ">=0.34.0,<2" },
     { name = "langchain-postgres", specifier = "==0.0.16" },
     { name = "langfuse", specifier = "==3.9.1" },
     { name = "llama-index-core", specifier = ">=0.14.3,<0.15" },

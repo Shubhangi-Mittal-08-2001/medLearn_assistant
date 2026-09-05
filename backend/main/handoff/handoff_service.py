@@ -5,7 +5,7 @@ import datetime
 import secrets
 import re
 from email.mime.text import MIMEText
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Sequence
 from dotenv import load_dotenv
 from llama_index.core.settings import Settings
 
@@ -17,6 +17,14 @@ load_dotenv()
 FAITHFULNESS_THRESHOLD = 0.6
 RELEVANCE_THRESHOLD = 0.5
 CONFIDENCE_THRESHOLD = 40
+
+# A direct request is an intent, not a medical-evidence judgement.  Keeping it
+# deterministic avoids a separate LLM round trip on every normal query.
+EXPLICIT_HANDOFF_PATTERN = re.compile(
+    r"\b(?:speak|talk|connect|transfer|escalat\w*|refer)\b.{0,40}\b(?:human|agent|person|doctor|support|representative)\b|"
+    r"\b(?:human|agent|person|doctor|support|representative)\b.{0,40}\b(?:please|help|now)\b",
+    re.IGNORECASE,
+)
 
 SMTP_HOST = os.getenv("SMTP_HOST")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
@@ -34,6 +42,60 @@ def generate_handoff_reference_id(now: Optional[datetime.datetime] = None) -> st
     return f"HO-{now.strftime('%Y%m%d-%H%M%S')}-{secrets.token_hex(3).upper()}"
 
 
+def is_explicit_handoff_request(message: str) -> bool:
+    """Return whether the user directly asks to be transferred to a person."""
+    return bool(EXPLICIT_HANDOFF_PATTERN.search(message))
+
+
+async def classify_medical_intent(message: str) -> Dict[str, Any]:
+    """Classify whether a query is medical before any agent invocation."""
+    intent_prompt = f"""Classify the user's query by intent before it is routed.
+
+Return exactly one label: MEDICAL or NON_MEDICAL.
+
+Use the query's meaning and medical indicators, including anatomy, physiology,
+symptoms, diseases, diagnosis, treatment, medication, laboratory values,
+clinical terminology, medical specialties such as dentistry, orthodontics,
+oral health, and surgery, medical education, named clinical rules, or
+questions about uploaded medical course material. A request to speak to a
+human is not itself medical evidence.
+Classify general conversation, coding, travel, finance, entertainment, and
+other unrelated requests as NON_MEDICAL.
+
+<user_query>
+{message}
+</user_query>
+
+Label:"""
+    try:
+        llm = Settings.llm
+        if llm is None:
+            raise ValueError("LLM is not configured in Settings.")
+        response = await llm.acomplete(intent_prompt)
+        label_match = re.search(r"\b(MEDICAL|NON_MEDICAL)\b", response.text.upper())
+        if label_match:
+            label = label_match.group(1)
+            return {
+                "medical": label == "MEDICAL",
+                "reason": f"LLM intent classification: {label}",
+            }
+        raise ValueError("LLM returned no valid intent label.")
+    except Exception as exc:
+        logger.warning("Medical intent classification unavailable: %s", exc)
+        fallback_medical = bool(re.search(
+            r"\b(?:anatomy|physiology|symptom|disease|diagnos\w*|treatment|drug|"
+            r"medication|clinical|medical|patient|doctor|dentistry|dental|"
+            r"orthodontic|oral|hospital|therapy|"
+            r"receptor|neuron|muscle|pain|blood|lab(?:oratory)?)\b",
+            message,
+            re.IGNORECASE,
+        ))
+        return {
+            "medical": fallback_medical,
+            "reason": "keyword fallback after unavailable intent classification",
+        }
+
+
 def evaluate_score(
     faithfulness: Optional[float],
     relevance: Optional[float],
@@ -46,8 +108,8 @@ def evaluate_score(
     # 2. faithfulness or relevance is None → "evaluation scores unavailable"
     # 3. faithfulness < 0.6 → "faithfulness below threshold"
     # 4. relevance < 0.5 → "answer relevance below threshold"
-    # 5. Keywords in question (human/agent/support/escalate) → "explicit user request"
-    # 6. Otherwise → {"trigger": False}
+    # 5. Otherwise → {"trigger": False}; direct handoff intent is handled by
+    # is_explicit_handoff_request() at the routing boundary.
     if no_chunks:
         return {"trigger": True, "reason": "retrieval returned no context"}
     if faithfulness is None or relevance is None:
@@ -56,23 +118,57 @@ def evaluate_score(
         return {"trigger": True, "reason": "faithfulness below threshold"}
     if relevance < RELEVANCE_THRESHOLD:
         return {"trigger": True, "reason": "answer relevance below threshold"}
-    if any(keyword in user_question.lower() for keyword in ["human", "agent", "support", "escalate"]):
-        return {"trigger": True, "reason": "explicit user request"}
     return {"trigger": False, "reason": "no escalation needed"}
 
 
-async def evaluate_confidence_score(answer: str) -> Dict[str, Any]:
-    """Evaluate LLM confidence score (0-100) and trigger handoff if below threshold (40)."""
+async def evaluate_confidence_score(
+    answer: str,
+    question: str,
+    relevant_chunks: Sequence[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Evaluate answer confidence against the question and retrieved context."""
     # Use LLM to rate confidence
     # 1. Get Settings.llm (raise ValueError if None)
-    # 2. Prompt: "Rate confidence 0–100.\nAnswer: {answer}"
+    # 2. Prompt: Rate confidence using the question, answer, and retrieved chunks
     # 3. Parse score from response (extract digits, default to 50)
     # 4. Return {"trigger": bool, "reason": str, "confidence": int}
+    logger.info(
+        "Starting confidence evaluation (answer_chars=%d, chunks=%d, threshold=%d)",
+        len(answer),
+        len(relevant_chunks),
+        CONFIDENCE_THRESHOLD,
+    )
     try:
         llm = Settings.llm
         if llm is None:
             raise ValueError("LLM is not configured in Settings.")
-        confidence_prompt = f"Rate confidence 0–100.\nAnswer: {answer}"
+        context = "\n\n".join(
+            str(chunk.get("text", chunk.get("content", "")))
+            for chunk in relevant_chunks
+            if chunk.get("text") or chunk.get("content")
+        )
+        confidence_prompt = f"""Evaluate how confidently the answer resolves the question using only the retrieved context.
+
+Score from 0 to 100 based on:
+- whether the answer directly addresses the question;
+- whether its claims are supported by the retrieved context;
+- whether the context contains enough relevant information;
+- whether the answer avoids unsupported assumptions or contradictions.
+
+Return only one integer from 0 to 100.
+
+<question>
+{question}
+</question>
+
+<retrieved_context>
+{context or "No relevant context was retrieved."}
+</retrieved_context>
+
+<answer>
+{answer}
+</answer>"""
+        logger.debug("Submitting confidence prompt to the configured LLM")
         confidence_response = await llm.acomplete(confidence_prompt)
         score_match = re.search(
             r"(?:confidence|score|rating)\D{0,12}(100|[0-9]{1,2})\b",
@@ -83,6 +179,11 @@ async def evaluate_confidence_score(answer: str) -> Dict[str, Any]:
             score_match = re.search(r"\b(100|[0-9]{1,2})\b", confidence_response.text)
         confidence_score = int(score_match.group(1)) if score_match else 50
         confidence_score = max(0, min(100, confidence_score))
+        logger.info(
+            "Confidence evaluation completed (score=%d, trigger=%s)",
+            confidence_score,
+            confidence_score < CONFIDENCE_THRESHOLD,
+        )
     except Exception as exc:
         logger.warning("Confidence evaluation unavailable: %s", exc)
         return {
@@ -103,32 +204,6 @@ async def evaluate_confidence_score(answer: str) -> Dict[str, Any]:
         "confidence": confidence_score
     }
 
-
-
-async def evaluate_explicit_user_request(message: str) -> Dict[str, Any]:
-    """LLM-based classifier for explicit user request or frustration."""
-    # Use LLM to classify if user is asking for human help
-    # 1. Get Settings.llm (raise ValueError if None)
-    # 2. Prompt: Ask LLM to return "YES" or "NO" if user wants human help
-    # 3. Check if "YES" in response.text.upper()
-    # 4. Return {"trigger": bool, "reason": str}
-    try:
-        llm = Settings.llm
-        if llm is None:
-            raise ValueError("LLM is not configured in Settings.")
-
-        user_request_prompt = f"Does the user want to speak with a human agent? Answer with 'YES' or 'NO'.\nMessage: {message}"
-        user_request_response = await llm.acomplete(user_request_prompt)
-
-        if re.search(r"\bYES\b", user_request_response.text, re.IGNORECASE):
-            return {"trigger": True, "reason": "explicit user request for human help"}
-        return {"trigger": False, "reason": "no explicit user request for human help"}
-    except Exception as exc:
-        logger.warning("Explicit user request evaluation unavailable: %s", exc)
-        return {
-            "trigger": False,
-            "reason": "explicit user request evaluation unavailable",
-        }
 
 
 def send_handoff_email(context: Dict[str, Any]):

@@ -1,4 +1,5 @@
 from main.service.guardrails import GuardrailsValidator
+from main.handoff.handoff_service import evaluate_score, is_explicit_handoff_request
 
 
 def test_allows_medical_question():
@@ -35,3 +36,60 @@ def test_detects_input_pii_metadata_without_blocking():
     d = GuardrailsValidator().decide_input("My email is user@example.com. Explain the retina.")
     assert d.allowed is True
     assert d.pii_detected is True
+
+
+def test_handoff_reference_is_not_payment_card_pii():
+    reference = "HO-20260903-111223-87F448"
+    d = GuardrailsValidator().validate_and_sanitize_output(f"Reference ID: {reference}")
+    assert d.pii_detected is False
+    assert d.sanitized_text == f"Reference ID: {reference}"
+
+
+def test_internal_identifiers_are_not_payment_cards():
+    validator = GuardrailsValidator()
+    identifiers = (
+        "HO-A123456B",
+        "request-20260903174230",
+        "trace_ab12cd34ef56",
+        "550e8400-e29b-41d4-a716-446655440000",
+        "2026-09-03T17:42:30Z",
+    )
+    for identifier in identifiers:
+        sanitized, summaries = validator._fallback_redact(identifier)
+        assert sanitized == identifier
+        assert not any("payment card" in summary for summary in summaries)
+
+
+def test_luhn_valid_payment_card_is_redacted():
+    d = GuardrailsValidator().decide_input("Use card 4111 1111 1111 1111")
+    assert d.pii_detected is True
+    assert "[REDACTED_CARD]" in d.sanitized_text
+    assert any("payment card" in summary for summary in d.phi_summaries)
+
+
+def test_normal_medical_sentence_has_no_pii():
+    d = GuardrailsValidator().decide_input("The patient has severe chest pain.")
+    assert d.pii_detected is False
+    assert d.phi_summaries == []
+
+
+def test_explicit_handoff_detection_does_not_require_an_llm():
+    assert is_explicit_handoff_request("Please connect me to a human agent")
+    assert is_explicit_handoff_request("Can I speak with a doctor?")
+    assert not is_explicit_handoff_request("Explain the role of a human receptor")
+
+
+def test_medical_query_with_human_as_context_is_not_explicit_handoff():
+    assert not is_explicit_handoff_request(
+        "What is the receptor density of Merkel receptors in human digits?"
+    )
+
+
+def test_score_evaluation_ignores_contextual_human_keyword():
+    result = evaluate_score(
+        faithfulness=0.9,
+        relevance=0.9,
+        user_question="What is the receptor density of Merkel receptors in human digits?",
+        no_chunks=False,
+    )
+    assert result["trigger"] is False

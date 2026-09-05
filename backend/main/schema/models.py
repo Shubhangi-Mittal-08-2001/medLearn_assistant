@@ -47,7 +47,6 @@ class QueryResponse(BaseModel):
     """Response model for query endpoint."""
     answer: str
     query: Optional[str] = None
-    retrieved_nodes: List[NodeResponse] = Field(default_factory=list)
     source_nodes: List[dict] = Field(default_factory=list)
     tools_used: List[str] = Field(default_factory=list)
     tool_errors: List[Dict[str, str]] = Field(default_factory=list)
