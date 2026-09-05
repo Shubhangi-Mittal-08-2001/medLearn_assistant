@@ -159,3 +159,13 @@ package = false
 pythonpath = ["."]
 testpaths = ["test"]
 asyncio_mode = "auto"
+cache_dir = ".test-cache"
+verbosity_test_cases = 1
+filterwarnings = [
+    'ignore:This package \(llama-cloud-services\) is deprecated.*:DeprecationWarning:llama_parse',
+    "ignore:The 'is_flag' and 'flag_value' parameters are not supported by Typer.*:DeprecationWarning:typer.params",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = false
