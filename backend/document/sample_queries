@@ -16,7 +16,6 @@ Use Hugging Face to classify this sentence: The patient has a mild fever.
 
 Use Hugging Face to classify this sentence: The patient reports numbness in the left hand.
 
-
 Explicit human handoff: I want to speak with a human doctor about pain receptors.
 
 Low-confidence/empty-retrieval handoff: Explain the newly discovered receptor called Zeta-9 in human joints.

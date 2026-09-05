@@ -94,10 +94,10 @@ async def test_upload_success_and_processing_error(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_upload_rejects_large_file(monkeypatch):
-    upload = UploadFile(filename="lesson.pdf", file=__import__("io").BytesIO(b"x" * (10 * 1024 * 1024 + 1)))
+    upload = UploadFile(filename="lesson.pdf", file=__import__("io").BytesIO(b"x" * (routes.MAX_FILE_SIZE + 1)))
     with pytest.raises(HTTPException) as error:
         await routes.upload_document(upload, user())
-    assert error.value.detail == "File size exceeds 10MB limit"
+    assert error.value.detail == f"File size exceeds {routes.MAX_FILE_SIZE_KB} KB limit"
 
 
 @pytest.mark.asyncio

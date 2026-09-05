@@ -262,14 +262,14 @@ async def upload_document(
         file_size = len(content)
         logger.info(f"[UPLOAD] File read: {file.filename}, Size: {file_size} bytes ({file_size/1024:.2f} KB)")
 
-        # Validate file size (10 MB)
-        if file_size > 10 * 1024 * 1024:
+        # Validate file size against the configured upload limit.
+        if file_size > MAX_FILE_SIZE:
             logger.warning(
                 f"[UPLOAD] File size exceeds limit: {file.filename} ({file_size} bytes)"
             )
             raise HTTPException(
                 status_code=400,
-                detail="File size exceeds 10MB limit",
+                detail=f"File size exceeds {MAX_FILE_SIZE_KB} KB limit",
             )
 
         # Save uploaded content to a temporary file

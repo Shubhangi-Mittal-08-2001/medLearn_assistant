@@ -201,15 +201,6 @@ Return only one integer from 0 to 100.
             score_match = re.search(r"\b(100|[0-9]{1,2})\b", confidence_response.text)
         confidence_score = int(score_match.group(1)) if score_match else 50
         confidence_score = max(0, min(100, confidence_score))
-        try:
-            langfuse.create_score(
-                name="confidence",
-                value=confidence_score,
-                comment=f"LLM confidence score: {confidence_score}",
-            )
-            langfuse.flush()
-        except Exception as exc:
-            logger.warning("Unable to flush confidence score to Langfuse: %s", exc)
         logger.info(
             "Confidence evaluation completed (score=%d, trigger=%s)",
             confidence_score,
